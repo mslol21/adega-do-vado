@@ -216,9 +216,12 @@ export const AdminPanel: React.FC = () => {
                         <td className="p-4 hidden md:table-cell text-sm" style={{ color: `${accent}70` }}>{p.category}</td>
                         <td className="p-4 text-sm font-bold" style={{ color: accent }}>R$ {p.price?.toFixed(2)}</td>
                         <td className="p-4 hidden sm:table-cell">
-                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${p.isActive !== false ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
+                          <button 
+                            onClick={() => updateProduct({ ...p, isActive: p.isActive === false ? true : false })}
+                            title={p.isActive !== false ? 'Clique para desativar' : 'Clique para ativar'}
+                            className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer ${p.isActive !== false ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25' : 'bg-red-500/15 text-red-400 hover:bg-red-500/25'}`}>
                             {p.isActive !== false ? 'Ativo' : 'Inativo'}
-                          </span>
+                          </button>
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-1">

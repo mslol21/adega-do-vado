@@ -32,6 +32,10 @@ export const AdminPanel: React.FC = () => {
   const [newCatImage, setNewCatImage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  // New state for editing categories
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showCatForm, setShowCatForm] = useState(false);
+  const [catForm, setCatForm] = useState<Partial<Category>>({ name: '', image: '', subcategories: ['Todos'] });
 
   useEffect(() => { setFormSettings(settings); }, [settings]);
   useEffect(() => {
@@ -72,6 +76,15 @@ export const AdminPanel: React.FC = () => {
   };
 
   const openAdd = () => { setEditing(null); setForm({ ...emptyProduct(), category: categories[0]?.id }); setShowForm(true); };
+  const openEditCategory = (c: Category) => { setEditingCategory(c); setCatForm({ name: c.name, image: c.image, subcategories: c.subcategories }); setShowCatForm(true); };
+  const closeCatForm = () => { setShowCatForm(false); setEditingCategory(null); setCatForm({ name: '', image: '', subcategories: ['Todos'] }); };
+  const submitCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingCategory) {
+      await updateCategory({ ...editingCategory, ...catForm } as Category);
+    }
+    closeCatForm();
+  };
   const openEdit = (p: Product) => { setEditing(p); setForm(p); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditing(null); setForm(emptyProduct()); };
 
@@ -283,8 +296,14 @@ export const AdminPanel: React.FC = () => {
                     <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.bgPrimary}EE, transparent 60%)` }} />
                     <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end">
                       <span className="font-serif font-bold text-sm text-white">{c.name}</span>
+                      <button onClick={() => openEditCategory(c)}
+                        className="p-1.5 rounded-lg bg-blue-500/80 text-white opacity-0 group-hover:opacity-100 transition-all mr-1"
+                        >
+                        <Edit2 size={12} />
+                      </button>
                       <button onClick={() => deleteCategory(c.id)}
-                        className="p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-all">
+                        className="p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-all"
+                        >
                         <Trash2 size={12} />
                       </button>
                     </div>

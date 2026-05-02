@@ -8,7 +8,7 @@ const STORES = [
   { id: 'adega', label: 'Adega do Vado', icon: <GlassWater size={24} />, color: '#F2BC1B', path: '/admin/adega' },
 ];
 
-const ADMIN_PASSWORD = 'vado2025';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'vado2025';
 
 export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();

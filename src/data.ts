@@ -1,9 +1,9 @@
 export const COMPANY_DATA = {
-  name: "Tabacaria Calixto",
+  name: "Adega do Vado",
   whatsapp: "5511999999999",
   niche: "Charutos, Narguilé & Acessórios Premium",
-  instagram: "tabacariacalixto",
-  tiktok: "@tabacariacalixto",
+  instagram: "adegadovado",
+  tiktok: "@adegadovado",
   slogan: "A arte de apreciar o bom tabaco"
 };
 

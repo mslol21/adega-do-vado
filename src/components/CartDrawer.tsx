@@ -16,7 +16,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { theme, id: storeId } = useStore();
 
   const handleCheckout = () => {
-    const storeName = settings.name || (storeId === 'tabacaria' ? 'Tabacaria Calixto' : 'Adega Calixto');
+    const storeName = settings.name || 'Adega do Vado';
     const message = `Olá ${storeName}! Gostaria de fazer um pedido:\n\n` +
       cart.map(item => `📦 *${item.quantity}x ${item.name}*\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n') +
       `\n\n━━━━━━━━━━━━━━━\n*💰 Total: ${totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n━━━━━━━━━━━━━━━\n\n_Pedido gerado via catálogo online._\n\nAguardando confirmação...`;

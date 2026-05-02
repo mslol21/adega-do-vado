@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+@theme {
+  /* === Paleta Premium Dark Tabacaria === */
+  --color-navy: #0D0A07;
+  --color-navy-light: #16120D;
+  --color-navy-mid: #1E1912;
+
+  /* Dourado envelhecido / âmbar */
+  --color-gold: #C9963C;
+  --color-gold-light: #E8C87A;
+  --color-gold-dark: #8B6514;
+
+  /* Laranja sutil para CTAs */
+  --color-ember: #D4622A;
+  --color-ember-light: #E88050;
+
+  /* Cinza fumaça para textos secundários */
+  --color-smoke: #9B8E7D;
+  --color-smoke-light: #C4B9AB;
+
+  --font-serif: "Cormorant Garamond", "Playfair Display", serif;
+  --font-display: "Bebas Neue", "Impact", sans-serif;
+  --font-inter: "Inter", system-ui, sans-serif;
+
+  --shadow-gold: 0 10px 30px -10px rgba(201, 150, 60, 0.35);
+  --shadow-ember: 0 10px 30px -10px rgba(212, 98, 42, 0.4);
+  --shadow-premium: 0 20px 60px -20px rgba(0, 0, 0, 0.8);
+  --shadow-card: 0 4px 24px -6px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  @apply transition-colors duration-300;
+}
+
+:root {
+  font-family: var(--font-inter);
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: var(--color-smoke-light);
+  background-color: var(--color-navy);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-navy);
+}
+
+/* ===================== Typography ===================== */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    @apply font-bold tracking-tight text-gold;
+  }
+
+  h1 { @apply text-5xl md:text-7xl; }
+  h2 { @apply text-3xl md:text-5xl; }
+  h3 { @apply text-xl md:text-2xl; }
+}
+
+/* ===================== Gradients ===================== */
+.gold-gradient {
+  background: linear-gradient(135deg, #C9963C 0%, #E8C87A 50%, #8B6514 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ember-gradient {
+  background: linear-gradient(135deg, #D4622A 0%, #E88050 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-bg-gradient {
+  background: linear-gradient(135deg, #C9963C 0%, #E8C87A 50%, #8B6514 100%);
+}
+
+.ember-bg-gradient {
+  background: linear-gradient(135deg, #D4622A 0%, #E88050 100%);
+}
+
+/* ===================== Components ===================== */
+.glass-morphism {
+  background: rgba(13, 10, 7, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(201, 150, 60, 0.15);
+}
+
+.card-premium {
+  background: var(--color-navy-light);
+  border: 1px solid rgba(201, 150, 60, 0.08);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-premium:hover {
+  border-color: rgba(201, 150, 60, 0.3);
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-4px);
+}
+
+.monogram-circle {
+  border: 2px solid var(--color-gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1/1;
+}
+
+.cart-drawer-open {
+  overflow: hidden;
+}
+
+/* ===================== Texture Overlay ===================== */
+.texture-overlay {
+  position: relative;
+}
+.texture-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9963C' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===================== Scrollbar ===================== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-navy);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gold-dark);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+/* ===================== Selection ===================== */
+::selection {
+  background: var(--color-gold);
+  color: var(--color-navy);
+}

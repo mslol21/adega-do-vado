@@ -133,6 +133,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const updateProduct = async (product: Product) => {
+    // Ensure category exists to avoid foreign key violation (error 23503)
+    if (product.category) {
+      const cat = categories.find(c => c.id === product.category);
+      if (cat) {
+        await supabase.from('categories').upsert({
+          id: cat.id,
+          name: cat.name,
+          image: cat.image,
+          subcategories: cat.subcategories || ['Todos'],
+          store_id: storeConfig.id
+        });
+      }
+    }
+
     const { error } = await supabase.from('products').upsert({
       id: product.id,
       store_id: storeConfig.id,

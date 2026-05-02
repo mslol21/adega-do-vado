@@ -65,7 +65,7 @@ export const TABACARIA_CONFIG: StoreConfig = {
   ],
   products: [
     {
-      id: 'ch1', name: 'Charuto Premium Nacional',
+      id: '550e8400-e29b-41d4-a716-446655440000', name: 'Charuto Premium Nacional',
       description: 'Folha selecionada, corpo encorpado com notas amadeiradas.',
       price: 38.00, image: 'https://images.unsplash.com/photo-1527799820374-87f60cf4d41c?q=80&w=800',
       category: 'charutos', subcategory: 'Nacionais',

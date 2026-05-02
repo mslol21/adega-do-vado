@@ -132,42 +132,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     await fetchData();
   };
 
-  const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
   const updateProduct = async (product: Product) => {
-    if (isUUID(product.id)) {
-      const { error } = await supabase.from('products').update({
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        image: product.image,
-        category: product.category,
-        subcategory: product.subcategory,
-        is_customizable: product.isCustomizable,
-        is_active: product.isActive,
-        available_colors: product.availableColors,
-        has_name_option: product.hasNameOption,
-        variations: product.variations || [],
-        customization_lists: product.customizationLists || [],
-        name_price: product.namePrice,
-        wholesale_price: product.wholesalePrice,
-        wholesale_min_quantity: product.wholesaleMinQuantity
-      }).eq('id', product.id);
-      if (error) throw error;
-      await fetchData();
-    } else {
-      setProducts(prev => prev.map(p => p.id === product.id ? product : p));
-    }
+    const { error } = await supabase.from('products').upsert({
+      id: product.id,
+      store_id: storeConfig.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      subcategory: product.subcategory,
+      is_customizable: product.isCustomizable,
+      is_active: product.isActive,
+      available_colors: product.availableColors,
+      has_name_option: product.hasNameOption,
+      variations: product.variations || [],
+      customization_lists: product.customizationLists || [],
+      name_price: product.namePrice,
+      wholesale_price: product.wholesalePrice,
+      wholesale_min_quantity: product.wholesaleMinQuantity
+    });
+    if (error) throw error;
+    await fetchData();
   };
 
   const deleteProduct = async (id: string) => {
-    if (isUUID(id)) {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
-      await fetchData();
-    } else {
-      setProducts(prev => prev.filter(p => p.id !== id));
-    }
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
+    await fetchData();
   };
 
   const updateSettings = async (newSettings: ShopSettings) => {

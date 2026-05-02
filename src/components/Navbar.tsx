@@ -10,7 +10,6 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const { totalItems } = useCart();
-  const { settings } = useData();
   const store = useStore();
   const { theme } = store;
 

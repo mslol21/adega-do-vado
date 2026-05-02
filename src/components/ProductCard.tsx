@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Info } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Product } from '../types';
 import { useCart } from '../context/CartContext';

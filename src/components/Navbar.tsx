@@ -1,7 +1,6 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 
 interface NavbarProps {

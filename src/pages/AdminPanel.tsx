@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
-import type { Product } from '../types';
+import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
   Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle
@@ -20,7 +20,7 @@ export const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { products, categories, settings, loading,
     addProduct, updateProduct, deleteProduct,
-    addCategory, deleteCategory, updateSettings, uploadFile } = useData();
+    addCategory, updateCategory, deleteCategory, updateSettings, uploadFile } = useData();
   const { theme, id: storeId } = useStore();
 
   const [tab, setTab] = useState<Tab>('products');
@@ -82,6 +82,8 @@ export const AdminPanel: React.FC = () => {
     e.preventDefault();
     if (editingCategory) {
       await updateCategory({ ...editingCategory, ...catForm } as Category);
+    } else {
+      await addCategory(catForm as Category);
     }
     closeCatForm();
   };
@@ -421,6 +423,30 @@ export const AdminPanel: React.FC = () => {
             </motion.div>
           </div>
         )}
+
+{/* ── Category Form Modal ── */}
+<AnimatePresence>
+  {showCatForm && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-xl rounded-3xl p-8 overflow-y-auto max-h-[92vh] border"
+        style={{ background: bg, borderColor: `${accent}25` }}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-serif font-bold" style={{ color: accent }}>{editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+          <button onClick={closeCatForm} style={{ color: `${accent}60` }} className="hover:text-white"><X size={22} /></button>
+        </div>
+        <form onSubmit={submitCategory} className="space-y-5">
+          {field('Nome', input({ required: true, value: catForm.name || '', onChange: e => setCatForm({ ...catForm, name: e.target.value }) }))}
+          {field('Imagem (URL)', input({ placeholder: 'https://...', value: catForm.image || '', onChange: e => setCatForm({ ...catForm, image: e.target.value }) }))}
+          {field('Subcategorias (separadas por vírgula)', input({ placeholder: 'Todos, Premium', value: catForm.subcategories?.join(', ') || '', onChange: e => setCatForm({ ...catForm, subcategories: e.target.value.split(',').map(s => s.trim()) }) }))}
+          <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105" style={{ background: theme.gradientAccent, color: theme.bgPrimary }}>
+            <Save size={16} /> {editingCategory ? 'Salvar alterações' : 'Criar categoria'}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
       </AnimatePresence>
     </div>
   );

@@ -13,7 +13,7 @@ interface CartDrawerProps {
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
   const { settings } = useData();
-  const { theme, id: storeId } = useStore();
+  const { theme } = useStore();
 
   const handleCheckout = () => {
     const storeName = settings.name || 'Adega do Vado';

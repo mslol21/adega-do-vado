@@ -188,7 +188,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     const fileExt = file.name.split('.').pop();
     const fileName = `${storeConfig.id}/${Math.random()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file);
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      throw uploadError;
+    }
     const { data } = supabase.storage.from('products').getPublicUrl(fileName);
     return data.publicUrl;
   };

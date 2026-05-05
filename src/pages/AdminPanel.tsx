@@ -80,21 +80,31 @@ export const AdminPanel: React.FC = () => {
   const closeCatForm = () => { setShowCatForm(false); setEditingCategory(null); setCatForm({ name: '', image: '', subcategories: ['Todos'] }); };
   const submitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingCategory) {
-      await updateCategory({ ...editingCategory, ...catForm } as Category);
-    } else {
-      await addCategory(catForm as Category);
+    try {
+      if (editingCategory) {
+        await updateCategory({ ...editingCategory, ...catForm } as Category);
+      } else {
+        await addCategory(catForm as Category);
+      }
+      closeCatForm();
+    } catch (err: any) {
+      console.error('Error saving category:', err);
+      alert('Erro ao salvar categoria. Verifique as permissões da tabela "categories" no Supabase.');
     }
-    closeCatForm();
   };
   const openEdit = (p: Product) => { setEditing(p); setForm(p); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditing(null); setForm(emptyProduct()); };
 
   const submitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editing) await updateProduct({ ...editing, ...form } as Product);
-    else await addProduct(form as Product);
-    closeForm();
+    try {
+      if (editing) await updateProduct({ ...editing, ...form } as Product);
+      else await addProduct(form as Product);
+      closeForm();
+    } catch (err: any) {
+      console.error('Error saving product:', err);
+      alert('Erro ao salvar produto. Verifique as permissões da tabela "products" no Supabase.');
+    }
   };
 
   const saveSettings = async (e: React.FormEvent) => {

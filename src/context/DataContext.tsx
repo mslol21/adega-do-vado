@@ -110,6 +110,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
+    // Ensure category exists to avoid foreign key violation (error 23503)
+    if (product.category) {
+      const cat = categories.find(c => c.id === product.category);
+      if (cat) {
+        const { error: catError } = await supabase.from('categories').upsert({
+          id: cat.id,
+          name: cat.name,
+          image: cat.image,
+          subcategories: cat.subcategories || ['Todos'],
+          store_id: storeConfig.id
+        });
+        if (catError) console.error('Erro ao sincronizar categoria:', catError);
+      }
+    }
+
     const { error } = await supabase.from('products').insert([{
       store_id: storeConfig.id,
       name: product.name,
@@ -123,12 +138,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       available_colors: product.availableColors,
       has_name_option: product.hasNameOption,
       variations: product.variations || [],
-      customization_lists: product.customizationLists || [],
+      customization_lists: (product as any).customizationLists || (product as any).customization_lists || [],
       name_price: product.namePrice,
       wholesale_price: product.wholesalePrice,
       wholesale_min_quantity: product.wholesaleMinQuantity
     }]).select();
-    if (error) throw error;
+
+    if (error) {
+      console.error('Erro detalhado do Supabase (Produto):', error);
+      throw error;
+    }
     await fetchData();
   };
 

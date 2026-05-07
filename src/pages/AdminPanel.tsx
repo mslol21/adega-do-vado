@@ -6,10 +6,10 @@ import { useStore } from '../context/StoreContext';
 import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
-  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search
+  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search, QrCode
 } from 'lucide-react';
 
-type Tab = 'products' | 'categories' | 'settings';
+type Tab = 'products' | 'categories' | 'settings' | 'qrcode';
 
 const emptyProduct = (): Partial<Product> => ({
   name: '', description: '', price: 0, image: '',
@@ -36,6 +36,7 @@ export const AdminPanel: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showCatForm, setShowCatForm] = useState(false);
   const [catForm, setCatForm] = useState<Partial<Category>>({ name: '', image: '', subcategories: ['Todos'] });
+  const [adminSearch, setAdminSearch] = useState('');
 
   useEffect(() => { setFormSettings(settings); }, [settings]);
   useEffect(() => {
@@ -119,6 +120,7 @@ export const AdminPanel: React.FC = () => {
     { id: 'products', label: 'Produtos', icon: <ShoppingBag size={18} /> },
     { id: 'categories', label: 'Categorias', icon: <Grid size={18} /> },
     { id: 'settings', label: 'Configurações', icon: <Settings size={18} /> },
+    { id: 'qrcode', label: 'QR Code Balcão', icon: <QrCode size={18} /> },
   ];
 
   if (loading) return (
@@ -127,7 +129,6 @@ export const AdminPanel: React.FC = () => {
     </div>
   );
 
-  const [adminSearch, setAdminSearch] = useState('');
 
   const filteredAdminProducts = products.filter(p => 
     p.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
@@ -375,6 +376,43 @@ export const AdminPanel: React.FC = () => {
                     {saved ? <><CheckCircle size={18} /> Salvo!</> : <><Save size={18} /> Salvar alterações</>}
                   </button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* ════ QR CODE TAB ════ */}
+          {tab === 'qrcode' && (
+            <div className="space-y-6">
+              <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>QR Code do Balcão</h1>
+              <div className="rounded-3xl p-8 border flex flex-col items-center text-center max-w-xl mx-auto" 
+                style={{ background: bg, borderColor: `${accent}15` }}>
+                
+                <div className="mb-6 p-4 bg-white rounded-2xl shadow-xl">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/' + storeId)}`} 
+                    alt="QR Code" 
+                    className="w-48 h-48 md:w-64 md:h-64"
+                  />
+                </div>
+
+                <h3 className="text-xl font-bold mb-2">Acesso Rápido ao Catálogo</h3>
+                <p className="text-sm mb-8" style={{ color: `${accent}70` }}>
+                  Imprima este código e coloque no seu balcão. <br/>
+                  O cliente escaneia e abre seu catálogo na hora!
+                </p>
+
+                <div className="flex flex-col w-full gap-3">
+                  <div className="p-3 rounded-xl bg-black/20 border border-white/5 text-[10px] font-mono break-all" style={{ color: accent }}>
+                    {window.location.origin + '/' + storeId}
+                  </div>
+                  <button 
+                    onClick={() => window.print()}
+                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                    style={{ background: theme.gradientAccent, color: theme.bgPrimary }}
+                  >
+                    <QrCode size={18} /> Imprimir QR Code
+                  </button>
+                </div>
               </div>
             </div>
           )}

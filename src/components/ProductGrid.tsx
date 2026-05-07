@@ -5,7 +5,12 @@ import { useStore } from '../context/StoreContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, LayoutGrid, ArrowRight } from 'lucide-react';
 
-export const ProductGrid: React.FC = () => {
+interface ProductGridProps {
+  searchQuery?: string;
+  onAddItem?: (name: string) => void;
+}
+
+export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAddItem }) => {
   const { products, categories } = useData();
   const { theme } = useStore();
 
@@ -16,22 +21,40 @@ export const ProductGrid: React.FC = () => {
   const activeCategory = categories.find(c => c.id === selectedCategory);
 
   const filteredProducts = useMemo(() => {
-    if (!selectedCategory) return [];
+    const query = searchQuery.toLowerCase().trim();
+    
     return products.filter(p => {
       const active = p.isActive !== false;
+      
+      // If there's a search query, search across everything
+      if (query) {
+        const nameMatch = p.name.toLowerCase().includes(query);
+        const descMatch = p.description?.toLowerCase().includes(query);
+        const catMatch = p.category?.toLowerCase().includes(query);
+        return active && (nameMatch || descMatch || catMatch);
+      }
+
+      // Normal navigation
+      if (!selectedCategory) return false; // Don't show products if no category is selected and no search
+      
       const catMatch = p.category === selectedCategory;
       const subMatch =
         selectedSubcategory === 'Todos' ||
         selectedSubcategory === 'Monte seu Kit' ||
         p.subcategory === selectedSubcategory;
+      
       return active && catMatch && subMatch;
     });
-  }, [products, selectedCategory, selectedSubcategory]);
+  }, [products, selectedCategory, selectedSubcategory, searchQuery]);
 
   const handleSelectCategory = (id: string) => {
     setSelectedCategory(id);
     setSelectedSubcategory('Todos');
   };
+
+  // Determine what view to show
+  const isSearching = searchQuery.length > 0;
+  const showCategoryGrid = !isSearching && !selectedCategory;
 
   return (
     <section id="catalog" className="py-20 px-4 min-h-screen" style={{ backgroundColor: theme.bgPrimary }}>
@@ -40,9 +63,13 @@ export const ProductGrid: React.FC = () => {
         {/* ── Header ─────────────────────────────────── */}
         <div className="flex items-center justify-between mb-10">
           <div>
-            {selectedCategory ? (
+            {(selectedCategory || isSearching) ? (
               <button
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => {
+                  setSelectedCategory(null);
+                  // If we were searching, clearing search is handled by Navbar, 
+                  // but we should ensure we return to category grid.
+                }}
                 className="flex items-center gap-2 text-sm font-medium mb-3 transition-all hover:opacity-80"
                 style={{ color: theme.accent }}
               >
@@ -50,16 +77,18 @@ export const ProductGrid: React.FC = () => {
               </button>
             ) : null}
             <h2 className="text-4xl font-serif font-bold" style={{ color: theme.accent }}>
-              {selectedCategory ? activeCategory?.name : 'Categorias'}
+              {isSearching ? 'Resultados da Busca' : (selectedCategory ? activeCategory?.name : 'Categorias')}
             </h2>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {selectedCategory
-                ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''}`
-                : 'Selecione uma categoria para explorar'}
+              {isSearching 
+                ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`
+                : (selectedCategory
+                  ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''}`
+                  : 'Selecione uma categoria para explorar')}
             </p>
           </div>
 
-          {selectedCategory && (
+          {(selectedCategory && !isSearching) && (
             <button onClick={() => setSelectedCategory(null)}
               className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all"
               style={{ borderColor: `${theme.accent}30`, color: theme.textMuted }}>
@@ -71,7 +100,7 @@ export const ProductGrid: React.FC = () => {
         <AnimatePresence mode="wait">
 
           {/* ── CATEGORY GRID (visual cards) ─────────── */}
-          {!selectedCategory && (
+          {showCategoryGrid && (
             <motion.div key="cat-grid"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
@@ -137,13 +166,13 @@ export const ProductGrid: React.FC = () => {
           )}
 
           {/* ── PRODUCT LISTING ──────────────────────── */}
-          {selectedCategory && (
+          {(selectedCategory || isSearching) && (
             <motion.div key="prod-list"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
             >
-              {/* Subcategory pills */}
-              {activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
+              {/* Subcategory pills - only if not searching or if category is explicitly selected */}
+              {selectedCategory && !isSearching && activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
                 <div className="flex flex-wrap gap-2 mb-8">
                   {activeCategory.subcategories.map(sub => (
                     <button key={sub} onClick={() => setSelectedSubcategory(sub)}
@@ -169,7 +198,7 @@ export const ProductGrid: React.FC = () => {
                       exit={{ opacity: 0, scale: 0.92 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <ProductCard product={product} />
+                      <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -178,7 +207,7 @@ export const ProductGrid: React.FC = () => {
               {filteredProducts.length === 0 && (
                 <div className="text-center py-24">
                   <p className="text-lg font-serif italic" style={{ color: `${theme.accent}40` }}>
-                    Nenhum produto nesta categoria no momento.
+                    Nenhum produto encontrado.
                   </p>
                 </div>
               )}

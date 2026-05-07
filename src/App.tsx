@@ -9,6 +9,7 @@ import { FixedFooter } from './components/FixedFooter';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminPanel } from './pages/AdminPanel';
 import { Landing } from './pages/Landing';
+import { Toast } from './components/Toast';
 import { useData } from './context/DataContext';
 import { DataProvider } from './context/DataContext';
 import { CartProvider } from './context/CartContext';
@@ -21,8 +22,14 @@ import { MapPin, Phone, Lock, ArrowLeft } from 'lucide-react';
 // ─── Loja genérica (usa StoreContext + DataContext injetados pelo pai) ─────────
 function Store() {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
   const { settings, loading } = useData();
   const navigate = useNavigate();
+
+  const showToast = (message: string) => {
+    setToast({ show: true, message });
+  };
 
   // Importamos o tema do DataContext via settings, mas o tema visual vem do StoreContext
   // O Navbar e outros componentes já usam useStore() internamente
@@ -40,7 +47,7 @@ function Store() {
 
   return (
     <div className="min-h-screen selection:text-white" style={{ backgroundColor: '#080508' }}>
-      <Navbar onCartClick={() => setIsCartOpen(true)} />
+      <Navbar onCartClick={() => setIsCartOpen(true)} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       {/* Back to landing */}
       <div className="fixed top-20 left-4 z-30">
@@ -56,7 +63,7 @@ function Store() {
       <main>
         <Hero />
         <SocialProof />
-        <ProductGrid />
+        <ProductGrid searchQuery={searchQuery} onAddItem={(name) => showToast(`${name} adicionado!`)} />
       </main>
 
       <footer className="py-16 px-4 border-t" style={{ backgroundColor: '#100810', borderColor: 'rgba(201,150,60,0.1)' }}>
@@ -140,6 +147,11 @@ function Store() {
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       <FixedFooter onClick={() => setIsCartOpen(true)} />
+      <Toast 
+        isVisible={toast.show} 
+        message={toast.message} 
+        onClose={() => setToast({ ...toast, show: false })} 
+      />
     </div>
   );
 }

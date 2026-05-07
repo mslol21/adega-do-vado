@@ -46,6 +46,7 @@ export type Product = {
   selectedVariation?: any;
   wholesalePrice?: number;
   wholesaleMinQuantity?: number;
+  stockQuantity?: number;
 }
 
 export type CartItem = Product & {

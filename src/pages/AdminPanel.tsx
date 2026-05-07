@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
-  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle
+  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search
 } from 'lucide-react';
 
 type Tab = 'products' | 'categories' | 'settings';
@@ -127,6 +127,14 @@ export const AdminPanel: React.FC = () => {
     </div>
   );
 
+  const [adminSearch, setAdminSearch] = useState('');
+
+  const filteredAdminProducts = products.filter(p => 
+    p.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
+    p.category?.toLowerCase().includes(adminSearch.toLowerCase()) ||
+    p.subcategory?.toLowerCase().includes(adminSearch.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen flex" style={{ background: theme.bgPrimary, color: '#fff' }}>
 
@@ -183,16 +191,28 @@ export const AdminPanel: React.FC = () => {
           {/* ════ PRODUCTS TAB ════ */}
           {tab === 'products' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>Produtos</h1>
                   <p className="text-xs mt-1" style={{ color: `${accent}60` }}>{products.length} cadastrados</p>
                 </div>
-                <button onClick={openAdd}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105"
-                  style={{ background: theme.gradientCta, color: '#fff', boxShadow: theme.shadowCta }}>
-                  <Plus size={16} /> Novo produto
-                </button>
+                <div className="flex w-full md:w-auto gap-3">
+                  <div className="relative flex-grow md:w-64">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" />
+                    <input 
+                      type="text" 
+                      placeholder="Buscar na tabela..." 
+                      value={adminSearch}
+                      onChange={e => setAdminSearch(e.target.value)}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-accent/40 transition-all"
+                    />
+                  </div>
+                  <button onClick={openAdd}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 flex-shrink-0"
+                    style={{ background: theme.gradientCta, color: '#fff', boxShadow: theme.shadowCta }}>
+                    <Plus size={16} /> Novo
+                  </button>
+                </div>
               </div>
 
               {/* Product table */}
@@ -203,12 +223,13 @@ export const AdminPanel: React.FC = () => {
                       <th className="p-4">Produto</th>
                       <th className="p-4 hidden md:table-cell">Categoria</th>
                       <th className="p-4">Preço</th>
+                      <th className="p-4 hidden sm:table-cell">Estoque</th>
                       <th className="p-4 hidden sm:table-cell">Status</th>
                       <th className="p-4 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map(p => (
+                    {filteredAdminProducts.map(p => (
                       <tr key={p.id} className="border-b transition-colors hover:bg-white/[0.02]" style={{ borderColor: `${accent}08` }}>
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -225,6 +246,11 @@ export const AdminPanel: React.FC = () => {
                         </td>
                         <td className="p-4 hidden md:table-cell text-sm" style={{ color: `${accent}70` }}>{p.category}</td>
                         <td className="p-4 text-sm font-bold" style={{ color: accent }}>R$ {p.price?.toFixed(2)}</td>
+                        <td className="p-4 hidden sm:table-cell">
+                          <span className={`text-xs font-bold ${(!p.stockQuantity || p.stockQuantity <= 0) ? 'text-red-400' : 'text-white/60'}`}>
+                            {p.stockQuantity || 0} un
+                          </span>
+                        </td>
                         <td className="p-4 hidden sm:table-cell">
                           <button 
                             onClick={() => updateProduct({ ...p, isActive: p.isActive === false ? true : false })}
@@ -386,6 +412,9 @@ export const AdminPanel: React.FC = () => {
                   )}
                   {field('Qtd Mínima Atacado', 
                     input({ type: 'number', value: form.wholesaleMinQuantity || '', onChange: e => setForm({ ...form, wholesaleMinQuantity: parseInt(e.target.value) }) })
+                  )}
+                  {field('Quantidade em Estoque', 
+                    input({ type: 'number', value: form.stockQuantity || 0, onChange: e => setForm({ ...form, stockQuantity: parseInt(e.target.value) }) })
                   )}
                 </div>
 

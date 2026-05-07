@@ -69,7 +69,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
           variations: p.variations || [],
           customizationLists: p.customization_lists || [],
           wholesalePrice: p.wholesale_price,
-          wholesaleMinQuantity: p.wholesale_min_quantity
+          wholesaleMinQuantity: p.wholesale_min_quantity,
+          stockQuantity: p.stock_quantity
         }));
         setProducts(mappedProducts);
       } else {
@@ -141,7 +142,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       customization_lists: (product as any).customizationLists || (product as any).customization_lists || [],
       name_price: product.namePrice,
       wholesale_price: product.wholesalePrice,
-      wholesale_min_quantity: product.wholesaleMinQuantity
+      wholesale_min_quantity: product.wholesaleMinQuantity,
+      stock_quantity: product.stockQuantity
     }]).select();
 
     if (error) {
@@ -183,7 +185,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       customization_lists: product.customizationLists || [],
       name_price: product.namePrice,
       wholesale_price: product.wholesalePrice,
-      wholesale_min_quantity: product.wholesaleMinQuantity
+      wholesale_min_quantity: product.wholesaleMinQuantity,
+      stock_quantity: product.stockQuantity
     });
     if (error) throw error;
     await fetchData();

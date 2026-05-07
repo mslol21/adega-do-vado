@@ -7,11 +7,17 @@ import { useStore } from '../context/StoreContext';
 
 interface ProductCardProps {
   product: Product;
+  onAdd?: () => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   const { addToCart } = useCart();
   const { theme } = useStore();
+
+  const handleAdd = () => {
+    addToCart(product);
+    onAdd?.();
+  };
 
   return (
     <motion.div
@@ -38,13 +44,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         />
         
         {/* Badge de Categoria/Subcategoria */}
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.subcategory && (
             <span 
-              className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md"
+              className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md self-start"
               style={{ background: `${theme.bgPrimary}80`, color: theme.accent, border: `1px solid ${theme.accent}30` }}
             >
               {product.subcategory}
+            </span>
+          )}
+          {(product.stockQuantity === 0) && (
+            <span 
+              className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md self-start bg-red-500/80 text-white"
+            >
+              Esgotado
             </span>
           )}
         </div>
@@ -75,12 +88,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
 
           <button
-            onClick={() => addToCart(product)}
-            className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+            onClick={handleAdd}
+            disabled={product.stockQuantity === 0}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${product.stockQuantity === 0 ? 'opacity-20 cursor-not-allowed scale-90' : 'hover:scale-110 active:scale-95'}`}
             style={{ 
-              background: theme.gradientAccent, 
-              color: theme.bgPrimary,
-              boxShadow: theme.shadowAccent 
+              background: product.stockQuantity === 0 ? '#444' : theme.gradientAccent, 
+              color: product.stockQuantity === 0 ? '#888' : theme.bgPrimary,
+              boxShadow: product.stockQuantity === 0 ? 'none' : theme.shadowAccent 
             }}
           >
             <Plus size={24} />
@@ -88,7 +102,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </div>
 
-      {/* Overlay de "Ver Detalhes" no Hover (Opcional, mas premium) */}
+      {/* Overlay de "Ver Detalhes" no Hover */}
       <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-accent/20 rounded-3xl transition-all duration-500" 
            style={{ borderColor: `${theme.accent}20` }} />
     </motion.div>

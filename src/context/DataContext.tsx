@@ -278,7 +278,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   const addCategory = async (category: Partial<Category>) => {
     const newId = category.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || Math.random().toString(36).substr(2, 9);
     if (isOfflineMode) {
-      setCategories([...categories, { id: newId, name: category.name || '', image: category.image || '', subcategories: category.subcategories || ['Todos'], store_id: storeConfig.id }]);
+      setCategories([...categories, { id: newId, name: category.name || '', image: category.image || '', subcategories: category.subcategories || ['Todos'] }]);
       return;
     }
     const { data, error } = await supabase

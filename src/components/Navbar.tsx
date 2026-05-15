@@ -28,7 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick, searchQuery, onSear
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo & Name - Hidden when search is expanded on mobile */}
         <div className={`flex items-center gap-4 transition-all duration-300 ${isSearchExpanded ? 'hidden md:flex' : 'flex'}`}>
-          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
+          <img src={store.logo || "/logo.png"} alt="Logo" className="h-10 w-10 object-contain" />
           <div className="flex flex-col">
             <span
               className="font-serif font-bold text-base md:text-lg leading-none uppercase tracking-wider"

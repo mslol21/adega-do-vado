@@ -89,8 +89,9 @@ export const AdminPanel: React.FC = () => {
       }
       closeCatForm();
     } catch (err: any) {
-      console.error('Error saving category:', err);
-      alert('Erro ao salvar categoria. Verifique as permissões da tabela "categories" no Supabase.');
+      const detail = err?.message || String(err);
+      console.error('Erro ao salvar categoria:', err);
+      alert(`Erro ao salvar categoria.\n\n${detail}\n\nVerifique o Console (F12) para mais detalhes.`);
     }
   };
   const openEdit = (p: Product) => { setEditing(p); setForm(p); setShowForm(true); };
@@ -103,8 +104,9 @@ export const AdminPanel: React.FC = () => {
       else await addProduct(form as Product);
       closeForm();
     } catch (err: any) {
-      console.error('Error saving product:', err);
-      alert('Erro ao salvar produto. Verifique as permissões da tabela "products" no Supabase.');
+      const detail = err?.message || String(err);
+      console.error('Erro ao salvar produto:', err);
+      alert(`Erro ao salvar produto.\n\n${detail}\n\nVerifique o Console (F12) para mais detalhes.`);
     }
   };
 

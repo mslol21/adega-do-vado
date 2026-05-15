@@ -40,6 +40,7 @@ export interface BenefitConfig {
 export interface StoreConfig {
   id: 'tabacaria' | 'adega';
   name: string;
+  logo?: string;
   slogan: string;
   whatsapp: string;
   niche: string;

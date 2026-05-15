@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, isOfflineMode } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
 
 interface DataContextType {
@@ -52,6 +52,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     try {
       setLoading(true);
 
+      // Se estiver rodando sem as chaves (.env), usa os dados locais instantaneamente para não travar no loading
+      if (isOfflineMode) {
+        setProducts(storeConfig.products);
+        setCategories(storeConfig.categories);
+        setLoading(false);
+        return;
+      }
+
       const { data: productsData } = await supabase
         .from('products')
         .select('*')
@@ -85,9 +93,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
 
       if (settingsData) setSettings(settingsData);
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
       const { data: catData } = await supabase
         .from('categories')
         .select('*')
@@ -106,23 +111,46 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
         categoryIds: o.category_ids || []
       }));
       setGlobalOptions(mappedOptions);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Fallbacks em caso de falha na conexão (como chaves faltando)
+      setCategories(storeConfig.categories);
+    } finally {
       setLoading(false);
     }
   };
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
-    // Ensure category exists to avoid foreign key violation (error 23503)
+    if (isOfflineMode) {
+      const newProduct = { ...product, id: Math.random().toString(36).substr(2, 9) } as Product;
+      setProducts([newProduct, ...products]);
+      return;
+    }
+
+    // Ensure category exists in Supabase to avoid foreign key violation (error 23503)
+    // This covers both DB categories and locally-defined categories from config
     if (product.category) {
-      const cat = categories.find(c => c.id === product.category);
+      // First try to find in current state, else fall back to storeConfig.categories
+      const cat =
+        categories.find(c => c.id === product.category) ||
+        storeConfig.categories.find(c => c.id === product.category);
+
       if (cat) {
-        const { error: catError } = await supabase.from('categories').upsert({
-          id: cat.id,
-          name: cat.name,
-          image: cat.image,
-          subcategories: cat.subcategories || ['Todos'],
-          store_id: storeConfig.id
-        });
-        if (catError) console.error('Erro ao sincronizar categoria:', catError);
+        const { error: catError } = await supabase.from('categories').upsert(
+          {
+            id: cat.id,
+            name: cat.name,
+            image: cat.image ?? '',
+            subcategories: cat.subcategories || ['Todos'],
+            store_id: storeConfig.id,
+          },
+          { onConflict: 'id' }
+        );
+        if (catError) {
+          console.error('Erro ao sincronizar categoria antes do produto:', catError);
+          // Don't throw here — proceed and let the product insert show the real error
+        }
       }
     }
 
@@ -134,37 +162,50 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       image: product.image,
       category: product.category,
       subcategory: product.subcategory,
-      is_customizable: product.isCustomizable,
-      is_active: product.isActive,
-      available_colors: product.availableColors,
-      has_name_option: product.hasNameOption,
+      is_customizable: product.isCustomizable ?? false,
+      is_active: product.isActive ?? true,
+      available_colors: product.availableColors ?? null,
+      has_name_option: product.hasNameOption ?? false,
       variations: product.variations || [],
       customization_lists: (product as any).customizationLists || (product as any).customization_lists || [],
-      name_price: product.namePrice,
-      wholesale_price: product.wholesalePrice,
-      wholesale_min_quantity: product.wholesaleMinQuantity,
-      stock_quantity: product.stockQuantity
+      name_price: product.namePrice ?? null,
+      wholesale_price: product.wholesalePrice ?? null,
+      wholesale_min_quantity: product.wholesaleMinQuantity ?? null,
+      stock_quantity: product.stockQuantity ?? 0,
     }]).select();
 
     if (error) {
-      console.error('Erro detalhado do Supabase (Produto):', error);
-      throw error;
+      const msg = `Código: ${error.code}\nMensagem: ${error.message}\nDetalhes: ${error.details ?? ''}\nDica: ${error.hint ?? ''}`;
+      console.error('Erro detalhado do Supabase (addProduct):', error);
+      throw new Error(msg);
     }
     await fetchData();
   };
 
   const updateProduct = async (product: Product) => {
-    // Ensure category exists to avoid foreign key violation (error 23503)
+    if (isOfflineMode) {
+      setProducts(products.map(p => p.id === product.id ? product : p));
+      return;
+    }
+
+    // Ensure category exists in Supabase to avoid foreign key violation (error 23503)
     if (product.category) {
-      const cat = categories.find(c => c.id === product.category);
+      const cat =
+        categories.find(c => c.id === product.category) ||
+        storeConfig.categories.find(c => c.id === product.category);
+
       if (cat) {
-        await supabase.from('categories').upsert({
-          id: cat.id,
-          name: cat.name,
-          image: cat.image,
-          subcategories: cat.subcategories || ['Todos'],
-          store_id: storeConfig.id
-        });
+        const { error: catError } = await supabase.from('categories').upsert(
+          {
+            id: cat.id,
+            name: cat.name,
+            image: cat.image ?? '',
+            subcategories: cat.subcategories || ['Todos'],
+            store_id: storeConfig.id,
+          },
+          { onConflict: 'id' }
+        );
+        if (catError) console.error('Erro ao sincronizar categoria antes de updateProduct:', catError);
       }
     }
 
@@ -177,28 +218,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       image: product.image,
       category: product.category,
       subcategory: product.subcategory,
-      is_customizable: product.isCustomizable,
-      is_active: product.isActive,
-      available_colors: product.availableColors,
-      has_name_option: product.hasNameOption,
+      is_customizable: product.isCustomizable ?? false,
+      is_active: product.isActive ?? true,
+      available_colors: product.availableColors ?? null,
+      has_name_option: product.hasNameOption ?? false,
       variations: product.variations || [],
       customization_lists: product.customizationLists || [],
-      name_price: product.namePrice,
-      wholesale_price: product.wholesalePrice,
-      wholesale_min_quantity: product.wholesaleMinQuantity,
-      stock_quantity: product.stockQuantity
+      name_price: product.namePrice ?? null,
+      wholesale_price: product.wholesalePrice ?? null,
+      wholesale_min_quantity: product.wholesaleMinQuantity ?? null,
+      stock_quantity: product.stockQuantity ?? 0,
     });
-    if (error) throw error;
+    if (error) {
+      const msg = `Código: ${error.code}\nMensagem: ${error.message}\nDetalhes: ${error.details ?? ''}\nDica: ${error.hint ?? ''}`;
+      console.error('Erro detalhado do Supabase (updateProduct):', error);
+      throw new Error(msg);
+    }
     await fetchData();
   };
 
   const deleteProduct = async (id: string) => {
+    if (isOfflineMode) {
+      setProducts(products.filter(p => p.id !== id));
+      return;
+    }
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
     await fetchData();
   };
 
   const updateSettings = async (newSettings: ShopSettings) => {
+    if (isOfflineMode) {
+      setSettings(newSettings);
+      return;
+    }
     const { error } = await supabase
       .from('settings')
       .upsert({ store_id: storeConfig.id, ...newSettings });
@@ -207,6 +260,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const uploadFile = async (file: File) => {
+    if (isOfflineMode) {
+      // Cria uma URL local (blob) para pré-visualização caso esteja sem banco
+      return URL.createObjectURL(file);
+    }
     const fileExt = file.name.split('.').pop();
     const fileName = `${storeConfig.id}/${Math.random()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file);
@@ -219,21 +276,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const addCategory = async (category: Partial<Category>) => {
+    const newId = category.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || Math.random().toString(36).substr(2, 9);
+    if (isOfflineMode) {
+      setCategories([...categories, { id: newId, name: category.name || '', image: category.image || '', subcategories: category.subcategories || ['Todos'], store_id: storeConfig.id }]);
+      return;
+    }
     const { data, error } = await supabase
       .from('categories')
       .insert([{ 
-        id: category.name?.toLowerCase().replace(/\s+/g, '-') || Math.random().toString(36).substr(2, 9), 
+        id: category.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || Math.random().toString(36).substr(2, 9), 
         name: category.name, 
-        image: category.image,
+        image: category.image ?? '',
         subcategories: category.subcategories || ['Todos'],
         store_id: storeConfig.id 
       }])
       .select();
-    if (error) console.error(error);
+    if (error) {
+      const msg = `Código: ${error.code}\nMensagem: ${error.message}\nDetalhes: ${error.details ?? ''}`;
+      console.error('Erro ao adicionar categoria:', error);
+      throw new Error(msg);
+    }
     if (data) setCategories([...categories, data[0]]);
   };
 
   const updateCategory = async (category: Category) => {
+    if (isOfflineMode) {
+      setCategories(categories.map(c => c.id === category.id ? category : c));
+      return;
+    }
     const { error } = await supabase.from('categories').update({ 
       name: category.name,
       image: category.image,
@@ -244,12 +314,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const deleteCategory = async (id: string) => {
+    if (isOfflineMode) {
+      setCategories(categories.filter(c => c.id !== id));
+      return;
+    }
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) console.error(error);
     setCategories(categories.filter(c => c.id !== id));
   };
 
   const addGlobalOption = async (option: Partial<GlobalOption>) => {
+    if (isOfflineMode) {
+      setGlobalOptions([...globalOptions, { ...option, id: Math.random().toString(36).substr(2, 9) } as GlobalOption]);
+      return;
+    }
     const dbOption = { ...option, category_ids: option.categoryIds };
     delete (dbOption as any).categoryIds;
     const { data, error } = await supabase.from('global_options').insert([dbOption]).select();
@@ -261,6 +339,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const updateGlobalOption = async (option: GlobalOption) => {
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      setGlobalOptions(globalOptions.map(o => o.id === option.id ? option : o));
+      return;
+    }
     const dbOption = { ...option, category_ids: option.categoryIds };
     delete (dbOption as any).categoryIds;
     const { error } = await supabase.from('global_options').update(dbOption).eq('id', option.id);
@@ -269,6 +351,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const deleteGlobalOption = async (id: string) => {
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      setGlobalOptions(globalOptions.filter(o => o.id !== id));
+      return;
+    }
     const { error } = await supabase.from('global_options').delete().eq('id', id);
     if (error) console.error(error);
     setGlobalOptions(globalOptions.filter(o => o.id !== id));

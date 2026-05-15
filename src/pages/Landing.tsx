@@ -9,8 +9,8 @@ const stores = [
     path: '/tabacaria',
     icon: <Flame size={40} />,
     label: 'Tabacaria',
-    name: 'Adega do Vado — Tabacaria',
-    slogan: 'Narguilé, Sedas & Conveniência',
+    name: 'Henri Imports Tabaca',
+    slogan: 'Vapes, Narguilés & Acessórios Premium',
     description:
       'Tudo para sua sessão com o melhor preço de Sorocaba. Essências, carvão e acessórios completos.',
     tags: ['Narguilé', 'Essências', 'Sedas', 'Isqueiros', 'Kits'],

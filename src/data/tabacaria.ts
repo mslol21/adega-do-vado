@@ -2,22 +2,23 @@ import type { StoreConfig } from '../types/store';
 
 export const TABACARIA_CONFIG: StoreConfig = {
   id: 'tabacaria',
-  name: 'Adega do Vado — Tabacaria',
-  slogan: 'Tudo para sua sessão e conveniência',
-  whatsapp: '5515988320793',
-  niche: 'Narguilé, Essências, Sedas e Conveniência em Sorocaba',
-  instagram: 'adegadovado',
-  tiktok: '@adegadovado',
+  name: 'Henri Imports Tabaca',
+  logo: '/logo_tabacaria.png',
+  slogan: 'Vapes, Narguilés & Acessórios Premium',
+  whatsapp: '5515996955018',
+  niche: 'Vapes, Narguilés, Sedas e Acessórios Importados em Sorocaba',
+  instagram: 'henriimports',
+  tiktok: '@henriimports',
   hero: {
-    badge: 'Artigos para Tabacaria desde 2008',
-    title: ['Qualidade e Preço', 'Justo em Sorocaba'],
+    badge: 'Artigos Importados Premium',
+    title: ['Henri Imports', 'Tabacaria'],
     description:
-      'As melhores essências, narguilés completos, sedas e acessórios. Tudo o que você precisa para sua sessão com o melhor preço da Vila Mineirão.',
-    cta: 'Ver Ofertas',
+      'Os melhores vapes, narguilés completos, sedas e acessórios importados. Tudo o que você precisa com o melhor preço de Sorocaba.',
+    cta: 'Ver Produtos',
     ctaSecondary: 'Falar no Zap',
-    heroAlt: 'Adega do Vado — Tabacaria e Bebidas',
+    heroAlt: 'Henri Imports Tabacaria — Vapes e Narguilés',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=1200',
-    floatingBadgeTitle: 'Desde 2008',
+    floatingBadgeTitle: 'Importados',
     floatingBadgeSub: 'Qualidade Garantida',
   },
   theme: {
@@ -41,18 +42,18 @@ export const TABACARIA_CONFIG: StoreConfig = {
   benefits: [
     {
       icon: 'Zap',
-      title: 'Tradição desde 2008',
-      description: 'Mais de 15 anos servindo a Vila Mineirão com os melhores preços.',
+      title: 'Vapes & Narguilés',
+      description: 'As melhores marcas de vapes, pods e narguilés importados.',
     },
     {
       icon: 'Tag',
-      title: 'Bebidas e Tabaco',
-      description: 'O melhor atacado e varejo de Sorocaba em um só lugar.',
+      title: 'Sedas & Acessórios',
+      description: 'Tudo para sua sessão com a melhor qualidade e preço.',
     },
     {
       icon: 'MessageCircle',
-      title: 'Zappeou, Pediu!',
-      description: 'Atendimento rápido pelo WhatsApp. Peça agora!',
+      title: 'Zappeou, Chegou!',
+      description: 'Atendimento rápido pelo WhatsApp. Faça seu pedido agora!',
     },
   ],
   categories: [

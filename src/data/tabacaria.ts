@@ -17,7 +17,7 @@ export const TABACARIA_CONFIG: StoreConfig = {
     cta: 'Ver Produtos',
     ctaSecondary: 'Falar no Zap',
     heroAlt: 'Henri Imports Tabacaria — Vapes e Narguilés',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=1200',
+    image: '/tabacaria_hero.png?v=3',
     floatingBadgeTitle: 'Importados',
     floatingBadgeSub: 'Qualidade Garantida',
   },

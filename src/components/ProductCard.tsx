@@ -60,6 +60,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
               Esgotado
             </span>
           )}
+          {product.promotionalPrice && product.promotionalPrice > 0 && product.stockQuantity !== 0 && (
+            <span 
+              className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md self-start"
+              style={{ background: '#EF4444', color: '#fff', border: `1px solid #DC2626` }}
+            >
+              Oferta
+            </span>
+          )}
         </div>
       </div>
 
@@ -77,9 +85,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
         <div className="flex items-center justify-between pt-2">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: theme.textMuted }}>Unidade</span>
-            <span className="text-xl font-bold" style={{ color: theme.accent }}>
-              R$ {product.price.toFixed(2)}
-            </span>
+            {product.promotionalPrice && product.promotionalPrice > 0 ? (
+              <div className="flex flex-col">
+                <span className="text-xs line-through" style={{ color: theme.textMuted }}>
+                  R$ {product.price.toFixed(2)}
+                </span>
+                <span className="text-xl font-bold" style={{ color: '#EF4444' }}>
+                  R$ {product.promotionalPrice.toFixed(2)}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xl font-bold" style={{ color: theme.accent }}>
+                R$ {product.price.toFixed(2)}
+              </span>
+            )}
             {product.wholesalePrice && (
               <span className="text-[10px] font-black" style={{ color: theme.accentLight }}>
                 Atacado: R$ {product.wholesalePrice.toFixed(2)} ({product.wholesaleMinQuantity}+ un)

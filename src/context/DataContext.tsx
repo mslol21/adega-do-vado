@@ -78,7 +78,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
           customizationLists: p.customization_lists || [],
           wholesalePrice: p.wholesale_price,
           wholesaleMinQuantity: p.wholesale_min_quantity,
-          stockQuantity: p.stock_quantity
+          stockQuantity: p.stock_quantity,
+          promotionalPrice: p.promotional_price
         }));
         setProducts(mappedProducts);
       } else {
@@ -172,6 +173,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       wholesale_price: product.wholesalePrice ?? null,
       wholesale_min_quantity: product.wholesaleMinQuantity ?? null,
       stock_quantity: product.stockQuantity ?? 0,
+      promotional_price: product.promotionalPrice ?? null,
     }]).select();
 
     if (error) {
@@ -228,6 +230,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       wholesale_price: product.wholesalePrice ?? null,
       wholesale_min_quantity: product.wholesaleMinQuantity ?? null,
       stock_quantity: product.stockQuantity ?? 0,
+      promotional_price: product.promotionalPrice ?? null,
     });
     if (error) {
       const msg = `Código: ${error.code}\nMensagem: ${error.message}\nDetalhes: ${error.details ?? ''}\nDica: ${error.hint ?? ''}`;

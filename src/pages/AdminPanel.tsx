@@ -100,8 +100,23 @@ export const AdminPanel: React.FC = () => {
   const submitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (editing) await updateProduct({ ...editing, ...form } as Product);
-      else await addProduct(form as Product);
+      const parsedPrice = form.price !== undefined && !isNaN(form.price) ? form.price : 0;
+      const parsedPromo = form.promotionalPrice !== undefined && !isNaN(form.promotionalPrice) ? form.promotionalPrice : undefined;
+      const parsedWholesale = form.wholesalePrice !== undefined && !isNaN(form.wholesalePrice) ? form.wholesalePrice : undefined;
+      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && !isNaN(form.wholesaleMinQuantity) ? form.wholesaleMinQuantity : undefined;
+      const parsedStock = form.stockQuantity !== undefined && !isNaN(form.stockQuantity) ? form.stockQuantity : 0;
+
+      const cleanedForm = {
+        ...form,
+        price: parsedPrice,
+        promotionalPrice: parsedPromo,
+        wholesalePrice: parsedWholesale,
+        wholesaleMinQuantity: parsedWholesaleMin,
+        stockQuantity: parsedStock,
+      };
+
+      if (editing) await updateProduct({ ...editing, ...cleanedForm } as Product);
+      else await addProduct(cleanedForm as Product);
       closeForm();
     } catch (err: any) {
       const detail = err?.message || String(err);
@@ -226,6 +241,7 @@ export const AdminPanel: React.FC = () => {
                       <th className="p-4">Produto</th>
                       <th className="p-4 hidden md:table-cell">Categoria</th>
                       <th className="p-4">Preço</th>
+                      <th className="p-4 hidden sm:table-cell">Promoção</th>
                       <th className="p-4 hidden sm:table-cell">Estoque</th>
                       <th className="p-4 hidden sm:table-cell">Status</th>
                       <th className="p-4 text-right">Ações</th>
@@ -248,7 +264,10 @@ export const AdminPanel: React.FC = () => {
                           </div>
                         </td>
                         <td className="p-4 hidden md:table-cell text-sm" style={{ color: `${accent}70` }}>{p.category}</td>
-                        <td className="p-4 text-sm font-bold" style={{ color: accent }}>R$ {p.price?.toFixed(2)}</td>
+                        <td className="p-4 text-sm font-bold" style={{ color: accent }}>R$ {p.price.toFixed(2)}</td>
+                        <td className="p-4 hidden sm:table-cell text-sm font-bold" style={{ color: '#10B981' }}>
+                          {p.promotionalPrice ? `R$ ${p.promotionalPrice.toFixed(2)}` : '-'}
+                        </td>
                         <td className="p-4 hidden sm:table-cell">
                           <span className={`text-xs font-bold ${(!p.stockQuantity || p.stockQuantity <= 0) ? 'text-red-400' : 'text-white/60'}`}>
                             {p.stockQuantity || 0} un
@@ -438,7 +457,8 @@ export const AdminPanel: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {field('Nome *', input({ required: true, value: form.name, onChange: e => setForm({ ...form, name: e.target.value }) }))}
                   {field('Preço (R$) *', input({ type: 'number', step: '0.01', required: true, value: form.price, onChange: e => setForm({ ...form, price: parseFloat(e.target.value) }) }))}
-                  <div className="md:col-span-2">
+                  {field('Preço Promocional (R$)', input({ type: 'number', step: '0.01', value: form.promotionalPrice || '', onChange: e => setForm({ ...form, promotionalPrice: parseFloat(e.target.value) }) }))}
+                  <div className="md:col-span-1">
                     {field('Descrição', textarea({ value: form.description, onChange: e => setForm({ ...form, description: e.target.value }) }))}
                   </div>
                   {field('Categoria', select({ value: form.category, onChange: e => setForm({ ...form, category: e.target.value }) },

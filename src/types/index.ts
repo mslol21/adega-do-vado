@@ -47,6 +47,7 @@ export type Product = {
   wholesalePrice?: number;
   wholesaleMinQuantity?: number;
   stockQuantity?: number;
+  promotionalPrice?: number;
 }
 
 export type CartItem = Product & {

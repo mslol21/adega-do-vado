@@ -20,6 +20,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
 
   const activeCategory = categories.find(c => c.id === selectedCategory);
 
+  const promoProducts = useMemo(() => 
+    products.filter(p => p.promotionalPrice && p.promotionalPrice > 0 && p.isActive !== false),
+  [products]);
+
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     
@@ -101,11 +105,31 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
 
           {/* ── CATEGORY GRID (visual cards) ─────────── */}
           {showCategoryGrid && (
-            <motion.div key="cat-grid"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6"
-            >
+            <div className="space-y-16">
+              {/* Promoções */}
+              {promoProducts.length > 0 && (
+                <motion.div key="promo-grid"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
+                >
+                  <div className="flex items-center gap-2 mb-6">
+                    <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
+                    <h3 className="text-2xl font-serif font-bold text-white">Ofertas Especiais</h3>
+                    <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                    {promoProducts.map(product => (
+                      <ProductCard key={product.id} product={product} onAdd={() => onAddItem?.(product.name)} />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.div key="cat-grid"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6"
+              >
               {categories.map((cat, i) => (
                 <motion.button
                   key={cat.id}
@@ -162,7 +186,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   </div>
                 </motion.button>
               ))}
-            </motion.div>
+              </motion.div>
+            </div>
           )}
 
           {/* ── PRODUCT LISTING ──────────────────────── */}

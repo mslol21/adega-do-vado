@@ -18,7 +18,7 @@ export const Hero: React.FC = () => {
 
   return (
     <section
-      className="pt-32 pb-20 px-4 overflow-hidden relative min-h-[85vh] flex items-center texture-overlay"
+      className="pt-28 lg:pt-32 pb-16 lg:pb-20 px-4 overflow-hidden relative lg:min-h-[85vh] flex items-center texture-overlay"
       style={{ backgroundColor: theme.bgPrimary }}
     >
       {/* Ambient glows */}
@@ -128,7 +128,7 @@ export const Hero: React.FC = () => {
             className="relative order-1 lg:order-2"
           >
             <div
-              className="relative aspect-[4/5] rounded-[40px] overflow-hidden shadow-2xl group"
+              className="relative aspect-video lg:aspect-[4/5] rounded-3xl lg:rounded-[40px] overflow-hidden shadow-2xl group"
               style={{ border: `1px solid ${theme.accent}30` }}
             >
               <img

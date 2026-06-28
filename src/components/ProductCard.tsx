@@ -24,7 +24,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -8 }}
-      className="group relative rounded-3xl overflow-hidden border transition-all duration-500"
+      className="group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full"
       style={{ 
         backgroundColor: theme.bgSecondary,
         borderColor: `${theme.accent}15`,
@@ -44,7 +44,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
         />
         
         {/* Badge de Categoria/Subcategoria */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-2">
           {product.subcategory && (
             <span 
               className="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md self-start"
@@ -72,36 +72,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       </div>
 
       {/* Informações */}
-      <div className="p-5 space-y-3">
+      <div className="p-3 sm:p-5 space-y-2 sm:space-y-3 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="font-serif font-bold text-lg leading-tight line-clamp-1" style={{ color: '#fff' }}>
+          <h3 className="font-serif font-bold text-sm sm:text-lg leading-tight line-clamp-1" style={{ color: '#fff' }}>
             {product.name}
           </h3>
-          <p className="text-xs mt-1 line-clamp-2" style={{ color: theme.textMuted }}>
+          <p className="text-[10px] sm:text-xs mt-1 line-clamp-2" style={{ color: theme.textMuted }}>
             {product.description}
           </p>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-1 sm:pt-2">
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: theme.textMuted }}>Unidade</span>
+            <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-widest" style={{ color: theme.textMuted }}>Unidade</span>
             {product.promotionalPrice && product.promotionalPrice > 0 ? (
               <div className="flex flex-col">
-                <span className="text-xs line-through" style={{ color: theme.textMuted }}>
+                <span className="text-[10px] sm:text-xs line-through" style={{ color: theme.textMuted }}>
                   R$ {product.price.toFixed(2)}
                 </span>
-                <span className="text-xl font-bold" style={{ color: '#EF4444' }}>
+                <span className="text-base sm:text-xl font-bold" style={{ color: '#EF4444' }}>
                   R$ {product.promotionalPrice.toFixed(2)}
                 </span>
               </div>
             ) : (
-              <span className="text-xl font-bold" style={{ color: theme.accent }}>
+              <span className="text-base sm:text-xl font-bold" style={{ color: theme.accent }}>
                 R$ {product.price.toFixed(2)}
               </span>
             )}
             {product.wholesalePrice && (
-              <span className="text-[10px] font-black" style={{ color: theme.accentLight }}>
-                Atacado: R$ {product.wholesalePrice.toFixed(2)} ({product.wholesaleMinQuantity}+ un)
+              <span className="text-[8px] sm:text-[10px] font-black leading-tight mt-0.5" style={{ color: theme.accentLight }}>
+                Atacado: R$ {product.wholesalePrice.toFixed(2)} <br className="sm:hidden" />({product.wholesaleMinQuantity}+ un)
               </span>
             )}
           </div>
@@ -109,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
           <button
             onClick={handleAdd}
             disabled={product.stockQuantity === 0}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${product.stockQuantity === 0 ? 'opacity-20 cursor-not-allowed scale-90' : 'hover:scale-110 active:scale-95'}`}
+            className={`w-9 h-9 sm:w-12 sm:h-12 shrink-0 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shadow-lg ${product.stockQuantity === 0 ? 'opacity-20 cursor-not-allowed scale-90' : 'hover:scale-110 active:scale-95'}`}
             style={{ 
               background: product.stockQuantity === 0 ? '#444' : theme.gradientAccent, 
               color: product.stockQuantity === 0 ? '#888' : theme.bgPrimary,

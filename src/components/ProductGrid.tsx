@@ -117,7 +117,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                     <h3 className="text-2xl font-serif font-bold text-white">Ofertas Especiais</h3>
                     <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
                     {promoProducts.map(product => (
                       <ProductCard key={product.id} product={product} onAdd={() => onAddItem?.(product.name)} />
                     ))}
@@ -214,7 +214,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
               )}
 
               {/* Products */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
                 <AnimatePresence mode="popLayout">
                   {filteredProducts.map(product => (
                     <motion.div key={product.id} layout

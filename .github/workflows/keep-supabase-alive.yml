@@ -1,0 +1,18 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Executa todos os dias às 12:00 UTC (09:00 BRT)
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Permite rodar manualmente se quiser
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to prevent pause
+        run: |
+          curl -s -o /dev/null -w "Status da requisição: %{http_code}\n" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWJzZ29hb2Z4dXFrZHhuYmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NjQ1NTcsImV4cCI6MjA5MzI0MDU1N30.FVya6LUVYGbfK7n3sZmSa9JagFm1I4UjUU-SCtuWHQk" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYWJzZ29hb2Z4dXFrZHhuYmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NjQ1NTcsImV4cCI6MjA5MzI0MDU1N30.FVya6LUVYGbfK7n3sZmSa9JagFm1I4UjUU-SCtuWHQk" \
+            "https://ksabsgoaofxuqkdxnblp.supabase.co/rest/v1/?limit=1"

@@ -69,6 +69,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       if (productsData && productsData.length > 0) {
         const mappedProducts = productsData.map(p => ({
           ...p,
+          images: p.images || [],
           isCustomizable: p.is_customizable,
           isActive: p.is_active,
           availableColors: p.available_colors,
@@ -161,6 +162,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       description: product.description,
       price: product.price,
       image: product.image,
+      images: product.images || [],
       category: product.category,
       subcategory: product.subcategory,
       is_customizable: product.isCustomizable ?? false,
@@ -218,6 +220,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       description: product.description,
       price: product.price,
       image: product.image,
+      images: product.images || [],
       category: product.category,
       subcategory: product.subcategory,
       is_customizable: product.isCustomizable ?? false,

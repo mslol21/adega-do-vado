@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -13,6 +13,18 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   const { addToCart } = useCart();
   const { theme } = useStore();
+
+  const [imgIndex, setImgIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const allImages = [product.image, ...(product.images || [])].filter(Boolean);
+
+  const scrollToIndex = (index: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: index * scrollRef.current.offsetWidth, behavior: 'smooth' });
+    }
+  };
 
   const handleAdd = () => {
     addToCart(product);
@@ -32,14 +44,54 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       }}
     >
       {/* Imagem do Produto */}
-      <div className="aspect-square overflow-hidden relative">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+      <div className="aspect-square overflow-hidden relative group/slider">
+        {allImages.length > 1 ? (
+          <>
+            <div 
+              ref={scrollRef}
+              className="flex w-full h-full overflow-x-auto snap-x snap-mandatory" 
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onScroll={(e) => {
+                const scrollLeft = (e.target as HTMLDivElement).scrollLeft;
+                const width = (e.target as HTMLDivElement).offsetWidth;
+                setImgIndex(Math.round(scrollLeft / width));
+              }}
+            >
+              {allImages.map((img, i) => (
+                <div key={i} className="w-full h-full flex-shrink-0 snap-center relative">
+                  <img src={img} alt={`${product.name} - ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+            {/* Dots */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {allImages.map((_, i) => (
+                <div key={i} onClick={(e) => scrollToIndex(i, e)} 
+                  className={`w-1.5 h-1.5 rounded-full cursor-pointer transition-all ${i === imgIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />
+              ))}
+            </div>
+            {/* Arrows (Desktop hover only) */}
+            <button onClick={(e) => scrollToIndex(Math.max(0, imgIndex - 1), e)} 
+              className={`absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/40 text-white backdrop-blur-md opacity-0 group-hover/slider:opacity-100 transition-opacity z-10 ${imgIndex === 0 ? 'hidden' : ''}`}>
+              <ChevronLeft size={16}/>
+            </button>
+            <button onClick={(e) => scrollToIndex(Math.min(allImages.length - 1, imgIndex + 1), e)} 
+              className={`absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/40 text-white backdrop-blur-md opacity-0 group-hover/slider:opacity-100 transition-opacity z-10 ${imgIndex === allImages.length - 1 ? 'hidden' : ''}`}>
+              <ChevronRight size={16}/>
+            </button>
+          </>
+        ) : (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        )}
+        
+        <style>{`.group\\/slider ::-webkit-scrollbar { display: none; }`}</style>
+        
         <div 
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{ background: `linear-gradient(to top, ${theme.bgPrimary}CC, transparent)` }}
         />
         

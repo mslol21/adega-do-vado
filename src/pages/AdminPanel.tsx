@@ -12,7 +12,7 @@ import {
 type Tab = 'products' | 'categories' | 'settings' | 'qrcode';
 
 const emptyProduct = (): Partial<Product> => ({
-  name: '', description: '', price: 0, image: '',
+  name: '', description: '', price: 0, image: '', images: [],
   category: '', subcategory: 'Todos', isCustomizable: false, isActive: true,
 });
 
@@ -479,7 +479,7 @@ export const AdminPanel: React.FC = () => {
                 </div>
 
                 {/* Photo upload */}
-                {field('Foto do produto',
+                {field('Foto do Produto (Principal)',
                   <div className="space-y-3">
                     <div className="flex gap-3 items-start">
                       <div className="w-24 h-24 rounded-xl overflow-hidden border flex-shrink-0 flex items-center justify-center"
@@ -491,12 +491,55 @@ export const AdminPanel: React.FC = () => {
                       <div className="flex-grow space-y-2">
                         <label className="flex items-center gap-2 cursor-pointer px-4 py-3 rounded-xl text-xs font-bold w-full justify-center transition-all hover:scale-105"
                           style={{ background: theme.gradientAccent, color: theme.bgPrimary }}>
-                          <Plus size={14} /> {uploading ? 'Enviando...' : 'Carregar foto'}
+                          <Plus size={14} /> {uploading ? 'Enviando...' : 'Carregar foto principal'}
                           <input type="file" accept="image/*,video/*" className="hidden"
-                            onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, url => setForm({ ...form, image: url })); }} />
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, url => setForm(prev => ({ ...prev, image: url }))); }} />
                         </label>
                         {input({ placeholder: 'Ou cole um link de imagem…', value: form.image, onChange: e => setForm({ ...form, image: e.target.value }) })}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Images */}
+                {field('Fotos Adicionais (Galeria)',
+                  <div className="space-y-3">
+                    {form.images && form.images.length > 0 && (
+                      <div className="flex flex-wrap gap-3">
+                        {form.images.map((imgUrl, idx) => (
+                          <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0 relative group"
+                            style={{ borderColor: `${accent}25` }}>
+                            <img src={imgUrl} className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setForm({ ...form, images: form.images?.filter((_, i) => i !== idx) })} 
+                              className="absolute top-1 right-1 p-1 bg-black/70 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={10}/>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105"
+                        style={{ border: `1px solid ${accent}40`, color: accent }}>
+                        <Plus size={14} /> Upload Múltiplo
+                        <input type="file" accept="image/*" multiple className="hidden"
+                          onChange={async e => { 
+                            const files = e.target.files; 
+                            if (!files) return;
+                            for (let i = 0; i < files.length; i++) {
+                               await handleUpload(files[i], url => {
+                                 setForm(prev => ({ ...prev, images: [...(prev.images || []), url] }));
+                               });
+                            }
+                          }} />
+                      </label>
+                      <button type="button" onClick={() => {
+                        const url = prompt('Cole a URL da imagem extra:');
+                        if (url) setForm(prev => ({ ...prev, images: [...(prev.images || []), url] }));
+                      }} className="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:bg-white/5" style={{ color: `${accent}80` }}>
+                        + Adicionar por Link
+                      </button>
                     </div>
                   </div>
                 )}

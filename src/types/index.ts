@@ -39,12 +39,13 @@ export type Product = {
   subcategory?: string;
   isCustomizable?: boolean;
   isActive?: boolean;
-  availableColors?: string;
+  flavors?: string;
   hasNameOption?: boolean;
   namePrice?: number;
   variations?: Variation[];
   customizationLists?: CustomizationList[];
   selectedVariation?: any;
+  selectedFlavor?: string;
   wholesalePrice?: number;
   wholesaleMinQuantity?: number;
   stockQuantity?: number;
@@ -54,13 +55,14 @@ export type Product = {
 export type CartItem = Product & {
   quantity: number;
   selectedVariation?: any;
+  selectedFlavor?: string;
 }
 
 export type CartContextType = {
   cart: CartItem[];
   addToCart: (product: Product) => void;
-  removeFromCart: (productId: string, productName?: string) => void;
-  updateQuantity: (productId: string, quantity: number, productName?: string) => void;
+  removeFromCart: (productId: string, productName?: string, selectedFlavor?: string) => void;
+  updateQuantity: (productId: string, quantity: number, productName?: string, selectedFlavor?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;

@@ -99,11 +99,17 @@ export const AdminPanel: React.FC = () => {
   const submitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const parsedPrice = form.price !== undefined && !isNaN(form.price) ? form.price : 0;
-      const parsedPromo = form.promotionalPrice !== undefined && !isNaN(form.promotionalPrice) ? form.promotionalPrice : undefined;
-      const parsedWholesale = form.wholesalePrice !== undefined && !isNaN(form.wholesalePrice) ? form.wholesalePrice : undefined;
-      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && !isNaN(form.wholesaleMinQuantity) ? form.wholesaleMinQuantity : undefined;
-      const parsedStock = form.stockQuantity !== undefined && !isNaN(form.stockQuantity) ? form.stockQuantity : 0;
+      const parseVal = (val: any) => {
+        if (val === undefined || val === null || val === '') return undefined;
+        const parsed = parseFloat(val.toString().replace(',', '.'));
+        return isNaN(parsed) ? undefined : parsed;
+      };
+
+      const parsedPrice = parseVal(form.price) || 0;
+      const parsedPromo = parseVal(form.promotionalPrice);
+      const parsedWholesale = parseVal(form.wholesalePrice);
+      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && form.wholesaleMinQuantity !== '' ? parseInt(form.wholesaleMinQuantity as any) : undefined;
+      const parsedStock = form.stockQuantity !== undefined && form.stockQuantity !== '' ? parseInt(form.stockQuantity as any) : 0;
 
       const cleanedForm = {
         ...form,
@@ -455,8 +461,8 @@ export const AdminPanel: React.FC = () => {
               <form onSubmit={submitProduct} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {field('Nome *', input({ required: true, value: form.name, onChange: e => setForm({ ...form, name: e.target.value }) }))}
-                  {field('Preço (R$) *', input({ type: 'number', step: '0.01', required: true, value: form.price, onChange: e => setForm({ ...form, price: parseFloat(e.target.value) }) }))}
-                  {field('Preço Promocional (R$)', input({ type: 'number', step: '0.01', value: form.promotionalPrice || '', onChange: e => setForm({ ...form, promotionalPrice: parseFloat(e.target.value) }) }))}
+                  {field('Preço (R$) *', input({ type: 'text', inputMode: 'decimal', required: true, value: form.price ?? '', onChange: e => setForm({ ...form, price: e.target.value as any }) }))}
+                  {field('Preço Promocional (R$)', input({ type: 'text', inputMode: 'decimal', value: form.promotionalPrice ?? '', onChange: e => setForm({ ...form, promotionalPrice: e.target.value as any }) }))}
                   <div className="md:col-span-1">
                     {field('Descrição', textarea({ value: form.description, onChange: e => setForm({ ...form, description: e.target.value }) }))}
                   </div>
@@ -467,13 +473,16 @@ export const AdminPanel: React.FC = () => {
                     input({ placeholder: 'Ex: Importados', value: form.subcategory, onChange: e => setForm({ ...form, subcategory: e.target.value }) })
                   )}
                   {field('Preço de Atacado (R$)', 
-                    input({ type: 'number', step: '0.01', value: form.wholesalePrice || '', onChange: e => setForm({ ...form, wholesalePrice: parseFloat(e.target.value) }) })
+                    input({ type: 'text', inputMode: 'decimal', value: form.wholesalePrice ?? '', onChange: e => setForm({ ...form, wholesalePrice: e.target.value as any }) })
                   )}
                   {field('Qtd Mínima Atacado', 
                     input({ type: 'number', value: form.wholesaleMinQuantity || '', onChange: e => setForm({ ...form, wholesaleMinQuantity: parseInt(e.target.value) }) })
                   )}
                   {field('Quantidade em Estoque', 
                     input({ type: 'number', value: form.stockQuantity || 0, onChange: e => setForm({ ...form, stockQuantity: parseInt(e.target.value) }) })
+                  )}
+                  {field('Sabores / Opções (separados por vírgula)', 
+                    input({ placeholder: 'Ex: Menta, Morango, Uva', value: form.flavors || '', onChange: e => setForm({ ...form, flavors: e.target.value }) })
                   )}
                 </div>
 

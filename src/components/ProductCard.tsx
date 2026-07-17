@@ -13,6 +13,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   const { addToCart } = useCart();
   const { theme } = useStore();
 
+  const flavorOptions = product.flavors ? product.flavors.split(',').map(f => f.trim()).filter(Boolean) : [];
+  const [selectedFlavor, setSelectedFlavor] = useState(flavorOptions.length > 0 ? flavorOptions[0] : '');
+
   const [imgIndex, setImgIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   
@@ -26,7 +29,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   };
 
   const handleAdd = () => {
-    addToCart(product);
+    if (flavorOptions.length > 0 && !selectedFlavor) {
+      alert('Por favor, selecione um sabor antes de adicionar.');
+      return;
+    }
+    addToCart({ ...product, selectedFlavor });
     onAdd?.();
   };
 
@@ -151,6 +158,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
               <span className="text-[8px] sm:text-[10px] font-black leading-tight mt-0.5" style={{ color: theme.accentLight }}>
                 Atacado: R$ {product.wholesalePrice.toFixed(2)} <br className="sm:hidden" />({product.wholesaleMinQuantity}+ un)
               </span>
+            )}
+            
+            {flavorOptions.length > 0 && (
+              <select
+                value={selectedFlavor}
+                onChange={e => setSelectedFlavor(e.target.value)}
+                className="mt-1 sm:mt-2 text-[10px] sm:text-xs rounded-lg p-1 sm:p-1.5 outline-none font-medium border"
+                style={{ 
+                  background: `${theme.bgPrimary}99`, 
+                  borderColor: `${theme.accent}30`, 
+                  color: '#fff',
+                  maxWidth: '120px'
+                }}
+              >
+                {flavorOptions.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
             )}
           </div>
 

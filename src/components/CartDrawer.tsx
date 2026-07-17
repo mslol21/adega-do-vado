@@ -160,7 +160,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       paymentDesc = `Dinheiro${formData.changeFor ? ` (Troco para R$ ${formData.changeFor})` : ' (Sem troco)'}`;
     }
 
-    const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
+    const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
 
     const message = `Olá ${storeName}! Gostaria de fazer um pedido:\n\n` +
       cartText +
@@ -273,7 +273,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   <div className="space-y-4">
                     {cart.map((item) => (
                       <div 
-                        key={`${item.id}-${item.name}`}
+                        key={`${item.id}-${item.name}-${item.selectedFlavor || ''}`}
                         className="flex gap-5 p-4 rounded-[24px] border group transition-all duration-500 animate-slide-in-right"
                         style={{ 
                           backgroundColor: `${theme.bgSecondary}60`, 
@@ -294,10 +294,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               <h4 className="font-bold text-sm line-clamp-2 leading-tight mb-1 transition-colors" style={{ color: '#fff' }}>
                                 {item.name}
                               </h4>
-                              <p className="text-[9px] uppercase tracking-widest font-medium" style={{ color: `${theme.accent}40` }}>{item.category}</p>
+                              <p className="text-[9px] uppercase tracking-widest font-medium" style={{ color: `${theme.accent}40` }}>
+                                {item.category} {item.selectedFlavor ? `• Sabor: ${item.selectedFlavor}` : ''}
+                              </p>
                             </div>
                             <button
-                              onClick={() => removeFromCart(item.id, item.name)}
+                              onClick={() => removeFromCart(item.id, item.name, item.selectedFlavor)}
                               className="transition-all p-1 rounded-lg"
                               style={{ color: `${theme.accent}20` }}
                               onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'}
@@ -314,7 +316,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             <div className="flex items-center gap-4 px-4 py-2 rounded-xl border shadow-lg"
                                  style={{ backgroundColor: `${theme.bgPrimary}CC`, borderColor: `${theme.accent}15` }}>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1, item.name)}
+                                onClick={() => updateQuantity(item.id, item.quantity - 1, item.name, item.selectedFlavor)}
                                 className="transition-all active:scale-75"
                                 style={{ color: `${theme.accent}40` }}
                               >
@@ -322,7 +324,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               </button>
                               <span className="text-sm font-black w-6 text-center tabular-nums" style={{ color: theme.accent }}>{item.quantity}</span>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.name)}
+                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.name, item.selectedFlavor)}
                                 className="transition-all active:scale-75"
                                 style={{ color: `${theme.accent}40` }}
                               >

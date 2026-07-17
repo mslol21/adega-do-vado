@@ -93,7 +93,7 @@ export const Landing: React.FC = () => {
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl w-full px-4 md:px-8 relative z-10">
-        {stores.map((store, i) => (
+        {stores.map((store) => (
           <div
             key={store.id}
             className="animate-slide-up"

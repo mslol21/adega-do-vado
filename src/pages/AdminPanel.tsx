@@ -108,8 +108,8 @@ export const AdminPanel: React.FC = () => {
       const parsedPrice = parseVal(form.price) || 0;
       const parsedPromo = parseVal(form.promotionalPrice);
       const parsedWholesale = parseVal(form.wholesalePrice);
-      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && form.wholesaleMinQuantity !== '' ? parseInt(form.wholesaleMinQuantity as any) : undefined;
-      const parsedStock = form.stockQuantity !== undefined && form.stockQuantity !== '' ? parseInt(form.stockQuantity as any) : 0;
+      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && (form.wholesaleMinQuantity as any) !== '' ? parseInt(form.wholesaleMinQuantity as any) : undefined;
+      const parsedStock = form.stockQuantity !== undefined && (form.stockQuantity as any) !== '' ? parseInt(form.stockQuantity as any) : 0;
 
       const cleanedForm = {
         ...form,

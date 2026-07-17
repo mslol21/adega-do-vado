@@ -126,7 +126,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
               <div key="cat-grid"
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 animate-slide-up"
               >
-              {categories.map((cat, i) => (
+              {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => handleSelectCategory(cat.id)}

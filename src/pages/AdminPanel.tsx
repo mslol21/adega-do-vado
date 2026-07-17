@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 import type { Product, Category } from '../types';
@@ -442,11 +441,11 @@ export const AdminPanel: React.FC = () => {
       </main>
 
       {/* ── Product Form Modal ── */}
-      <AnimatePresence>
+      <>
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl rounded-3xl p-8 overflow-y-auto max-h-[92vh] border"
+            <div
+              className="w-full max-w-2xl rounded-3xl p-8 overflow-y-auto max-h-[92vh] border animate-slide-up"
               style={{ background: bg, borderColor: `${accent}25` }}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-serif font-bold" style={{ color: accent }}>{editing ? 'Editar Produto' : 'Novo Produto'}</h2>
@@ -565,16 +564,17 @@ export const AdminPanel: React.FC = () => {
                   <Save size={18} /> {editing ? 'Salvar alterações' : 'Cadastrar produto'}
                 </button>
               </form>
-            </motion.div>
+            </div>
           </div>
         )}
+      </>
 
 {/* ── Category Form Modal ── */}
-<AnimatePresence>
+      <>
   {showCatForm && (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-xl rounded-3xl p-8 overflow-y-auto max-h-[92vh] border"
+      <div
+        className="w-full max-w-xl rounded-3xl p-8 overflow-y-auto max-h-[92vh] border animate-slide-up"
         style={{ background: bg, borderColor: `${accent}25` }}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-serif font-bold" style={{ color: accent }}>{editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</h2>
@@ -588,11 +588,10 @@ export const AdminPanel: React.FC = () => {
             <Save size={16} /> {editingCategory ? 'Salvar alterações' : 'Criar categoria'}
           </button>
         </form>
-      </motion.div>
+      </div>
     </div>
   )}
-</AnimatePresence>
-      </AnimatePresence>
+      </>
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Minus, Plus, MessageCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
@@ -188,30 +187,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 backdrop-blur-md z-50"
-            style={{ backgroundColor: `${theme.bgPrimary}CC` }}
-          />
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md z-50 flex flex-col border-l"
-            style={{ 
-              backgroundColor: theme.bgPrimary, 
-              borderColor: `${theme.accent}15`,
-              boxShadow: `0 0 50px -12px ${theme.accent}25`
-            }}
-          >
-            {/* Header */}
+    <div className={`fixed inset-0 z-50 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+      <div
+        onClick={onClose}
+        className={`absolute inset-0 backdrop-blur-md transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        style={{ backgroundColor: `${theme.bgPrimary}CC` }}
+      />
+      <div
+        className={`absolute right-0 top-0 bottom-0 w-full max-w-md flex flex-col border-l transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ 
+          backgroundColor: theme.bgPrimary, 
+          borderColor: `${theme.accent}15`,
+          boxShadow: `0 0 50px -12px ${theme.accent}25`
+        }}
+      >
+        {/* Header */}
             <div className="p-8 border-b flex items-center justify-between backdrop-blur-xl sticky top-0 z-10" style={{ borderColor: `${theme.accent}15` }}>
               <div className="flex items-center gap-4">
                 {step === 'checkout' && (
@@ -260,15 +250,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
               {step === 'cart' ? (
                 cart.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center px-8">
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="p-10 rounded-full mb-8 border relative"
+                    <div 
+                      className="p-10 rounded-full mb-8 border relative animate-fade-in"
                       style={{ backgroundColor: theme.bgSecondary, borderColor: `${theme.accent}10` }}
                     >
                       <ShoppingBag size={64} strokeWidth={1} style={{ color: `${theme.accent}20` }} />
                       <div className="absolute inset-0 rounded-full blur-2xl animate-pulse" style={{ backgroundColor: `${theme.accent}05` }} />
-                    </motion.div>
+                    </div>
                     <h3 className="font-serif text-2xl mb-3" style={{ color: `${theme.accent}80` }}>Carrinho Vazio</h3>
                     <p className="text-xs uppercase tracking-[0.3em] font-medium leading-loose mb-10" style={{ color: `${theme.accent}30` }}>
                       Explore nosso catálogo premium e selecione seus itens favoritos.
@@ -284,12 +272,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 ) : (
                   <div className="space-y-4">
                     {cart.map((item) => (
-                      <motion.div 
+                      <div 
                         key={`${item.id}-${item.name}`}
-                        layout
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex gap-5 p-4 rounded-[24px] border group transition-all duration-500"
+                        className="flex gap-5 p-4 rounded-[24px] border group transition-all duration-500 animate-slide-in-right"
                         style={{ 
                           backgroundColor: `${theme.bgSecondary}60`, 
                           borderColor: `${theme.accent}05` 
@@ -346,7 +331,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             </div>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 )
@@ -524,10 +509,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     {formData.paymentMethod === 'cash' && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-1.5"
+                      <div
+                        className="space-y-1.5 animate-slide-up"
                       >
                         <label className="text-[10px] uppercase font-bold tracking-widest block mb-1.5" style={{ color: `${theme.accent}50` }}>
                           Precisa de troco para quanto? (opcional)
@@ -540,7 +523,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                           style={{ background: theme.bgSecondary, borderColor: `${theme.accent}15`, color: '#fff' }}
                           placeholder="Ex: 50 ou 100"
                         />
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 </form>
@@ -605,9 +588,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
             )}
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+    </div>
   );
 };

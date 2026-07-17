@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { ProductCard } from './ProductCard';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, LayoutGrid, ArrowRight } from 'lucide-react';
 
 interface ProductGridProps {
@@ -101,16 +100,15 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
           )}
         </div>
 
-        <AnimatePresence mode="wait">
+        <div>
 
           {/* ── CATEGORY GRID (visual cards) ─────────── */}
           {showCategoryGrid && (
             <div className="space-y-16">
               {/* Promoções */}
               {promoProducts.length > 0 && (
-                <motion.div key="promo-grid"
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
+                <div key="promo-grid"
+                  className="animate-slide-up"
                 >
                   <div className="flex items-center gap-2 mb-6">
                     <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
@@ -122,22 +120,17 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                       <ProductCard key={product.id} product={product} onAdd={() => onAddItem?.(product.name)} />
                     ))}
                   </div>
-                </motion.div>
+                </div>
               )}
 
-              <motion.div key="cat-grid"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6"
+              <div key="cat-grid"
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 animate-slide-up"
               >
               {categories.map((cat, i) => (
-                <motion.button
+                <button
                   key={cat.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
                   onClick={() => handleSelectCategory(cat.id)}
-                  className="group relative rounded-2xl overflow-hidden text-left focus:outline-none"
+                  className="group relative rounded-2xl overflow-hidden text-left focus:outline-none animate-fade-in"
                   style={{ border: `1px solid ${theme.accent}20` }}
                 >
                   {/* Photo */}
@@ -184,17 +177,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                       Explorar <ArrowRight size={12} />
                     </div>
                   </div>
-                </motion.button>
+                </button>
               ))}
-              </motion.div>
+              </div>
             </div>
           )}
 
           {/* ── PRODUCT LISTING ──────────────────────── */}
           {(selectedCategory || isSearching) && (
-            <motion.div key="prod-list"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
+            <div key="prod-list"
+              className="animate-slide-up"
             >
               {/* Subcategory pills - only if not searching or if category is explicitly selected */}
               {selectedCategory && !isSearching && activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
@@ -215,18 +207,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
 
               {/* Products */}
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
-                <AnimatePresence mode="popLayout">
                   {filteredProducts.map(product => (
-                    <motion.div key={product.id} layout
-                      initial={{ opacity: 0, scale: 0.92 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.92 }}
-                      transition={{ duration: 0.25 }}
+                    <div key={product.id}
+                      className="animate-fade-in"
                     >
                       <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
-                    </motion.div>
+                    </div>
                   ))}
-                </AnimatePresence>
               </div>
 
               {filteredProducts.length === 0 && (
@@ -236,10 +223,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   </p>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
-        </AnimatePresence>
+        </div>
       </div>
     </section>
   );

@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -22,13 +21,8 @@ export const Toast: React.FC<ToastProps> = ({ message, isVisible, onClose }) => 
   }, [isVisible, onClose]);
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.9 }}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border backdrop-blur-xl"
+    <div
+      className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border backdrop-blur-xl transition-all duration-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
           style={{ 
             background: `${theme.bgSecondary}CC`,
             borderColor: `${theme.accent}30`,
@@ -49,8 +43,6 @@ export const Toast: React.FC<ToastProps> = ({ message, isVisible, onClose }) => 
           >
             <X size={16} />
           </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 };

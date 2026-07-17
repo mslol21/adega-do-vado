@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { ArrowRight, Flame, GlassWater } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -29,11 +28,8 @@ export const Hero: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div className="text-left order-2 lg:order-1">
             {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-xs mb-8 border tracking-widest uppercase"
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-xs mb-8 border tracking-widest uppercase animate-fade-in"
               style={{
                 background: `${theme.cta}18`,
                 color: theme.ctaLight,
@@ -42,39 +38,30 @@ export const Hero: React.FC = () => {
             >
               {iconMap[store.id === 'tabacaria' ? 'Flame' : 'GlassWater']}
               <span>{hero.badge}</span>
-            </motion.div>
+            </div>
 
             {/* Title */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="font-serif font-bold mb-8 leading-[1.1]"
+            <h1
+              className="font-serif font-bold mb-8 leading-[1.1] animate-slide-up"
               style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', color: theme.textMutedLight }}
             >
               {hero.title[0]}{' '}
               <span style={{ color: theme.accent }}>
                 {hero.title[1]}
               </span>
-            </motion.h1>
+            </h1>
 
             {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-lg mb-10 max-w-xl leading-relaxed"
+            <p
+              className="text-lg mb-10 max-w-xl leading-relaxed animate-slide-up"
               style={{ color: theme.textMuted }}
             >
               {hero.description}
-            </motion.p>
+            </p>
 
             {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center gap-4"
+            <div
+              className="flex flex-col sm:flex-row items-center gap-4 animate-slide-up"
             >
               <button
                 id="hero-cta-btn"
@@ -104,28 +91,22 @@ export const Hero: React.FC = () => {
               >
                 {hero.ctaSecondary}
               </button>
-            </motion.div>
+            </div>
 
             {/* Trust badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="flex flex-wrap gap-6 mt-10 text-sm"
+            <div
+              className="flex flex-wrap gap-6 mt-10 text-sm animate-fade-in"
               style={{ color: theme.textMuted }}
             >
               {['🚚 Envio para todo BR', '✅ Sem cadastro', '💬 Atendimento no Zap'].map(badge => (
                 <span key={badge}>{badge}</span>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* Hero image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, x: 20 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="relative order-1 lg:order-2"
+          <div
+            className="relative order-1 lg:order-2 animate-fade-in"
           >
             <div
               className="relative aspect-video lg:aspect-[4/5] rounded-3xl lg:rounded-[40px] overflow-hidden shadow-2xl group"
@@ -143,10 +124,8 @@ export const Hero: React.FC = () => {
             </div>
 
             {/* Floating badge */}
-            <motion.div
-              animate={{ y: [0, -15, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -bottom-6 -left-6 p-5 rounded-3xl backdrop-blur-md shadow-2xl hidden md:block"
+            <div
+              className="absolute -bottom-6 -left-6 p-5 rounded-3xl backdrop-blur-md shadow-2xl hidden md:block animate-bounce"
               style={{
                 background: theme.bgSecondary,
                 border: `1px solid ${theme.accent}30`,
@@ -169,8 +148,8 @@ export const Hero: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

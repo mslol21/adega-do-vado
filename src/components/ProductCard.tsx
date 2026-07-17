@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
@@ -32,11 +31,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -8 }}
-      className="group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full"
+    <div
+      className="group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full animate-slide-up hover:-translate-y-2"
       style={{ 
         backgroundColor: theme.bgSecondary,
         borderColor: `${theme.accent}15`,
@@ -176,6 +172,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       {/* Overlay de "Ver Detalhes" no Hover */}
       <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-accent/20 rounded-3xl transition-all duration-500" 
            style={{ borderColor: `${theme.accent}20` }} />
-    </motion.div>
+    </div>
   );
 };

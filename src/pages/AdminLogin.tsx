@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Lock, Flame, GlassWater, ArrowRight } from 'lucide-react';
 
 const STORES = [
@@ -29,8 +28,7 @@ export const AdminLogin: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0D151D' }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-6 animate-slide-up">
 
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border"
@@ -59,8 +57,7 @@ export const AdminLogin: React.FC = () => {
 
         {/* Password form */}
         {selectedStore && (
-          <motion.form initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4 animate-fade-in">
             <input type="password" placeholder="Senha de acesso" value={password}
               onChange={e => { setPassword(e.target.value); setError(''); }} autoFocus
               className="w-full rounded-xl p-4 text-center outline-none text-sm font-medium"
@@ -71,9 +68,9 @@ export const AdminLogin: React.FC = () => {
               style={{ background: 'linear-gradient(135deg, #F2BC1B, #FFD700)', color: '#0D151D' }}>
               Entrar no Painel <ArrowRight size={18} />
             </button>
-          </motion.form>
+          </form>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };

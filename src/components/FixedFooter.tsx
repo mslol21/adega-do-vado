@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
@@ -13,13 +12,10 @@ export const FixedFooter: React.FC<FixedFooterProps> = ({ onClick }) => {
   const { theme } = useStore();
 
   return (
-    <AnimatePresence>
+    <>
       {totalItems > 0 && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-6 left-4 right-4 z-40 md:hidden"
+        <div
+          className="fixed bottom-6 left-4 right-4 z-40 md:hidden animate-slide-up"
         >
           <button
             onClick={onClick}
@@ -50,8 +46,8 @@ export const FixedFooter: React.FC<FixedFooterProps> = ({ onClick }) => {
               </div>
             </div>
           </button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 };

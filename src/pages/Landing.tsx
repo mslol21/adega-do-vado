@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight, Flame, GlassWater } from 'lucide-react';
 
 const stores = [
@@ -66,11 +65,8 @@ export const Landing: React.FC = () => {
       />
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-14 relative z-10 px-4"
+      <div
+        className="text-center mb-14 relative z-10 px-4 animate-slide-up"
       >
         <div className="mb-6 flex justify-center">
           <img src="/logo.png" alt="Adega do Vado Logo" className="h-32 md:h-40 w-auto drop-shadow-2xl" />
@@ -93,16 +89,14 @@ export const Landing: React.FC = () => {
         <p className="text-white/60 text-base max-w-md mx-auto font-medium" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
           A tradição de Sorocaba em dois catálogos exclusivos.
         </p>
-      </motion.div>
+      </div>
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl w-full px-4 md:px-8 relative z-10">
         {stores.map((store, i) => (
-          <motion.div
+          <div
             key={store.id}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: i * 0.15, ease: 'easeOut' }}
+            className="animate-slide-up"
           >
             <Link
               to={store.path}
@@ -207,19 +201,16 @@ export const Landing: React.FC = () => {
                 </div>
               </div>
             </Link>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Footer note */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="text-white/20 text-xs mt-12 relative z-10"
+      <p
+        className="text-white/20 text-xs mt-12 relative z-10 animate-fade-in"
       >
         © {new Date().getFullYear()} Adega do Vado — Desde 2008
-      </motion.p>
+      </p>
     </div>
   );
 };

@@ -111,6 +111,15 @@ export const AdminPanel: React.FC = () => {
       const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && (form.wholesaleMinQuantity as any) !== '' ? parseInt(form.wholesaleMinQuantity as any) : undefined;
       const parsedStock = form.stockQuantity !== undefined && (form.stockQuantity as any) !== '' ? parseInt(form.stockQuantity as any) : 0;
 
+      let parsedFlavors: string[] | undefined = undefined;
+      if (form.flavors) {
+        if (Array.isArray(form.flavors)) {
+          parsedFlavors = form.flavors;
+        } else if (typeof form.flavors === 'string') {
+          parsedFlavors = form.flavors.split(',').map(f => f.trim()).filter(Boolean);
+        }
+      }
+
       const cleanedForm = {
         ...form,
         price: parsedPrice,
@@ -118,6 +127,7 @@ export const AdminPanel: React.FC = () => {
         wholesalePrice: parsedWholesale,
         wholesaleMinQuantity: parsedWholesaleMin,
         stockQuantity: parsedStock,
+        flavors: parsedFlavors
       };
 
       if (editing) await updateProduct({ ...editing, ...cleanedForm } as Product);
@@ -481,9 +491,13 @@ export const AdminPanel: React.FC = () => {
                   {field('Quantidade em Estoque', 
                     input({ type: 'number', value: form.stockQuantity || 0, onChange: e => setForm({ ...form, stockQuantity: parseInt(e.target.value) }) })
                   )}
-                  {field('Sabores / Opções (separados por vírgula)', 
-                    input({ placeholder: 'Ex: Menta, Morango, Uva', value: form.flavors || '', onChange: e => setForm({ ...form, flavors: e.target.value }) })
-                  )}
+                   {field('Sabores / Opções (separados por vírgula)', 
+                     input({ 
+                       placeholder: 'Ex: Menta, Morango, Uva', 
+                       value: Array.isArray(form.flavors) ? form.flavors.join(', ') : (form.flavors || ''), 
+                       onChange: e => setForm({ ...form, flavors: e.target.value }) 
+                     })
+                   )}
                 </div>
 
                 {/* Photo upload */}

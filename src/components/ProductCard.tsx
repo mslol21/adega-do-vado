@@ -13,8 +13,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   const { addToCart } = useCart();
   const { theme } = useStore();
 
-  const flavorOptions = product.flavors ? product.flavors.split(',').map(f => f.trim()).filter(Boolean) : [];
+  const flavorOptions = (() => {
+    if (!product.flavors) return [];
+    if (Array.isArray(product.flavors)) return product.flavors;
+    if (typeof product.flavors === 'string') {
+      return product.flavors.split(',').map(f => f.trim()).filter(Boolean);
+    }
+    return [];
+  })();
   const [selectedFlavor, setSelectedFlavor] = useState(flavorOptions.length > 0 ? flavorOptions[0] : '');
+
+  const handleFlavorChange = (flavorVal: string) => {
+    setSelectedFlavor(flavorVal);
+    const index = flavorOptions.indexOf(flavorVal);
+    if (index !== -1 && index < allImages.length) {
+      setImgIndex(index);
+      scrollToIndex(index);
+    }
+  };
 
   const [imgIndex, setImgIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,7 +179,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
             {flavorOptions.length > 0 && (
               <select
                 value={selectedFlavor}
-                onChange={e => setSelectedFlavor(e.target.value)}
+                onChange={e => handleFlavorChange(e.target.value)}
                 className="mt-1 sm:mt-2 text-[10px] sm:text-xs rounded-lg p-1 sm:p-1.5 outline-none font-medium border"
                 style={{ 
                   background: `${theme.bgPrimary}99`, 

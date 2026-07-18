@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { ProductCard } from './ProductCard';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
-import { ChevronLeft, LayoutGrid, ArrowRight } from 'lucide-react';
 
 interface ProductGridProps {
   searchQuery?: string;

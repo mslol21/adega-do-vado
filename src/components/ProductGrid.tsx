@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { ProductCard } from './ProductCard';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
-
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface ProductGridProps {
   searchQuery?: string;
   onAddItem?: (name: string) => void;
@@ -15,6 +15,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
   // null = showing category grid; string = selected category id
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todos');
+  const promoRef = useRef<HTMLDivElement>(null);
 
   const activeCategory = categories.find(c => c.id === selectedCategory);
 
@@ -63,6 +64,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
     }, 10);
   };
 
+  const scrollOffers = (dir: number) => {
+    if (promoRef.current) {
+      promoRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
+    }
+  };
+
   // Determine what view to show
   const isSearching = searchQuery.length > 0;
   const showCategoryGrid = !isSearching;
@@ -98,9 +105,18 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   <div className="flex items-center gap-2 mb-6">
                     <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
                     <h3 className="text-2xl font-serif font-bold text-white">Ofertas Especiais</h3>
-                    <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
+                    <span className="w-8 h-1 rounded-full hidden sm:block" style={{ background: '#EF4444' }} />
+                    
+                    <div className="ml-auto flex gap-2">
+                      <button onClick={() => scrollOffers(-1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button onClick={() => scrollOffers(1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+                  <div ref={promoRef} className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
                     {promoProducts.map(product => (
                       <div key={product.id} className="w-[75vw] sm:w-[280px] lg:w-[320px] flex-shrink-0 snap-start">
                         <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />

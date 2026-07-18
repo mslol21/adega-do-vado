@@ -116,10 +116,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                       </button>
                     </div>
                   </div>
-                  <div ref={promoRef} className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+                  <div ref={promoRef} className="grid grid-flow-col auto-cols-[calc(50%-6px)] sm:auto-cols-[calc(50%-12px)] md:auto-cols-[calc(50%-16px)] lg:auto-cols-[calc(33.333%-21px)] xl:auto-cols-[calc(25%-24px)] gap-3 sm:gap-6 md:gap-8 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
                     {promoProducts.map(product => (
-                      <div key={product.id} className="w-[75vw] sm:w-[280px] lg:w-[320px] flex-shrink-0 snap-start">
-                        <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
+                      <div key={product.id} className="snap-start relative h-full">
+                        <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} isPromo={true} />
                       </div>
                     ))}
                   </div>

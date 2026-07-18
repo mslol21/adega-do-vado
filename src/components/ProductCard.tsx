@@ -7,9 +7,10 @@ import { useStore } from '../context/StoreContext';
 interface ProductCardProps {
   product: Product;
   onAdd?: () => void;
+  isPromo?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isPromo }) => {
   const { addToCart } = useCart();
   const { theme } = useStore();
 
@@ -55,13 +56,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
 
   return (
     <div
-      className="group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full animate-slide-up hover:-translate-y-2"
+      className={`group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full animate-slide-up hover:-translate-y-2 ${isPromo ? 'promo-glow' : ''}`}
       style={{ 
         backgroundColor: theme.bgSecondary,
-        borderColor: `${theme.accent}15`,
-        boxShadow: '0 10px 30px -15px rgba(0,0,0,0.5)'
+        borderColor: isPromo ? theme.accent : `${theme.accent}15`,
+        boxShadow: isPromo ? `0 0 25px ${theme.accent}40` : '0 10px 30px -15px rgba(0,0,0,0.5)',
       }}
     >
+      {/* Shimmer effect for promo */}
+      {isPromo && (
+        <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 overflow-hidden rounded-2xl sm:rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -skew-x-12 translate-x-[-150%] group-hover:animate-shimmer" style={{ width: '50%' }} />
+        </div>
+      )}
       {/* Imagem do Produto */}
       <div className="aspect-square overflow-hidden relative group/slider">
         {allImages.length > 1 ? (

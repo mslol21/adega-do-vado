@@ -183,3 +183,21 @@ body {
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out forwards;
 }
+
+@keyframes shimmer {
+  0% { transform: skewX(-12deg) translateX(-150%); }
+  100% { transform: skewX(-12deg) translateX(300%); }
+}
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { filter: drop-shadow(0 0 0px transparent); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.15)); transform: scale(1.01); }
+  100% { filter: drop-shadow(0 0 0px transparent); transform: scale(1); }
+}
+.promo-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+  z-index: 10;
+}

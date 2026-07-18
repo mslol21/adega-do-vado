@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
 import { SocialProof } from './components/SocialProof';
 import { ProductGrid } from './components/ProductGrid';
 import { CartDrawer } from './components/CartDrawer';
@@ -60,8 +59,7 @@ function Store() {
         </button>
       </div>
 
-      <main>
-        <Hero />
+      <main className="pt-20">
         <SocialProof />
         <ProductGrid searchQuery={searchQuery} onAddItem={(name) => showToast(`${name} adicionado!`)} />
       </main>

@@ -38,7 +38,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
       }
 
       // Normal navigation
-      if (!selectedCategory) return false; // Don't show products if no category is selected and no search
+      if (!selectedCategory) return active; // Show all products if no category is selected
       
       const catMatch = p.category === selectedCategory;
       const subMatch =
@@ -54,21 +54,19 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
     setSelectedCategory(id);
     setSelectedSubcategory('Todos');
     
-    // Smooth scroll to top of catalog section after state update
+    // Smooth scroll to products section
     setTimeout(() => {
-      const catalog = document.getElementById('catalog');
-      if (catalog) {
-        const y = catalog.getBoundingClientRect().top + window.scrollY - 80; // 80px offset for navbar
+      const prodList = document.getElementById('prod-list');
+      if (prodList) {
+        const y = prodList.getBoundingClientRect().top + window.scrollY - 80;
         window.scrollTo({ top: y, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 10);
   };
 
   // Determine what view to show
   const isSearching = searchQuery.length > 0;
-  const showCategoryGrid = !isSearching && !selectedCategory;
+  const showCategoryGrid = !isSearching;
 
   return (
     <section id="catalog" className="py-20 px-4 min-h-screen" style={{ backgroundColor: theme.bgPrimary }}>
@@ -77,38 +75,15 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
         {/* ── Header ─────────────────────────────────── */}
         <div className="flex items-center justify-between mb-10">
           <div>
-            {(selectedCategory || isSearching) ? (
-              <button
-                onClick={() => {
-                  setSelectedCategory(null);
-                  // If we were searching, clearing search is handled by Navbar, 
-                  // but we should ensure we return to category grid.
-                }}
-                className="flex items-center gap-2 text-sm font-medium mb-3 transition-all hover:opacity-80"
-                style={{ color: theme.accent }}
-              >
-                <ChevronLeft size={18} /> Todas as categorias
-              </button>
-            ) : null}
             <h2 className="text-4xl font-serif font-bold" style={{ color: theme.accent }}>
-              {isSearching ? 'Resultados da Busca' : (selectedCategory ? activeCategory?.name : 'Categorias')}
+              {isSearching ? 'Resultados da Busca' : 'Categorias'}
             </h2>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {isSearching 
                 ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`
-                : (selectedCategory
-                  ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''}`
-                  : 'Selecione uma categoria para explorar')}
+                : 'Explore nosso catálogo premium'}
             </p>
           </div>
-
-          {(selectedCategory && !isSearching) && (
-            <button onClick={() => setSelectedCategory(null)}
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all"
-              style={{ borderColor: `${theme.accent}30`, color: theme.textMuted }}>
-              <LayoutGrid size={14} /> Ver todas
-            </button>
-          )}
         </div>
 
         <div>
@@ -135,7 +110,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
               )}
 
               <div key="cat-grid"
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 animate-slide-up"
+                className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 animate-slide-up"
               >
               {categories.map((cat) => (
                 <button
@@ -145,7 +120,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   style={{ border: `1px solid ${theme.accent}20` }}
                 >
                   {/* Photo */}
-                  <div className="aspect-[4/3] overflow-hidden relative">
+                  <div className="aspect-square overflow-hidden relative">
                     {cat.image ? (
                       <img
                         src={cat.image}
@@ -170,23 +145,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   </div>
 
                   {/* Label */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-6">
-                    <div className="font-serif font-bold text-2xl leading-tight drop-shadow-lg" style={{ color: '#fff' }}>
+                  <div className="absolute inset-0 flex flex-col justify-end p-3 md:p-4">
+                    <div className="font-serif font-bold text-sm md:text-lg leading-tight drop-shadow-lg" style={{ color: '#fff' }}>
                       {cat.name}
                     </div>
                     {cat.subcategories && cat.subcategories.length > 1 && (
-                      <div className="text-[10px] mt-1 opacity-90 font-medium uppercase tracking-[0.1em]" style={{ color: theme.accentLight }}>
-                        {cat.subcategories.filter(s => s !== 'Todos').slice(0, 2).join(' · ')}
-                        {cat.subcategories.length > 3 && ' ...'}
+                      <div className="hidden md:block text-[8px] mt-1 opacity-90 font-medium uppercase tracking-[0.1em]" style={{ color: theme.accentLight }}>
+                        {cat.subcategories.filter(s => s !== 'Todos').slice(0, 1).join(' · ')}
+                        {cat.subcategories.length > 2 && ' ...'}
                       </div>
                     )}
-                    {/* Arrow indicator */}
-                    <div
-                      className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all group-hover:bg-white group-hover:text-black self-start"
-                      style={{ background: theme.gradientAccent, color: theme.bgPrimary }}
-                    >
-                      Explorar <ArrowRight size={12} />
-                    </div>
                   </div>
                 </button>
               ))}
@@ -195,11 +163,32 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
           )}
 
           {/* ── PRODUCT LISTING ──────────────────────── */}
-          {(selectedCategory || isSearching) && (
-            <div key="prod-list"
-              className="animate-slide-up"
-            >
-              {/* Subcategory pills - only if not searching or if category is explicitly selected */}
+          <div id="prod-list" className={`animate-slide-up ${!isSearching ? 'mt-16 pt-12 border-t' : ''}`} style={{ borderColor: `${theme.accent}15` }}>
+            
+            {!isSearching && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h2 className="text-3xl font-serif font-bold" style={{ color: theme.accent }}>
+                    {selectedCategory ? activeCategory?.name : 'Todos os Produtos'}
+                  </h2>
+                  <p className="mt-1 text-xs uppercase tracking-widest font-bold" style={{ color: theme.textMuted }}>
+                    {filteredProducts.length} itens
+                  </p>
+                </div>
+                {selectedCategory && (
+                  <button onClick={() => {
+                    setSelectedCategory(null);
+                    setSelectedSubcategory('Todos');
+                  }}
+                    className="text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full border transition-all hover:bg-white/5 self-start sm:self-auto"
+                    style={{ color: theme.textMuted, borderColor: `${theme.accent}20` }}>
+                    Limpar Filtro
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Subcategory pills - only if category is explicitly selected */}
               {selectedCategory && !isSearching && activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
                 <div className="flex flex-wrap gap-2 mb-8">
                   {activeCategory.subcategories.map(sub => (
@@ -234,8 +223,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
                   </p>
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
         </div>
       </div>

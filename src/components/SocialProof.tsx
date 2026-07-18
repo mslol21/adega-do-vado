@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../context/StoreContext';
 
 export const SocialProof: React.FC = () => {
-  const { theme, settings } = useStore();
+  const { theme, name, logo } = useStore();
 
   return (
     <section className="px-4 pb-8 pt-4">
@@ -33,14 +33,14 @@ export const SocialProof: React.FC = () => {
           {/* Content */}
           <div className="relative z-10 flex flex-col md:flex-row items-center text-center md:text-left gap-6 md:gap-8 max-w-3xl">
             <img 
-              src={settings.logo} 
-              alt={settings.name} 
+              src={logo} 
+              alt={name} 
               className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-full shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
               style={{ border: `2px solid ${theme.accent}80`, background: theme.bgPrimary, padding: '4px' }}
             />
             <div className="flex flex-col justify-center">
               <h2 className="text-2xl sm:text-4xl font-serif font-bold mb-3 tracking-wide" style={{ color: theme.accent }}>
-                {settings.name}
+                {name}
               </h2>
               <p className="text-sm sm:text-base font-medium" style={{ color: theme.textMutedLight }}>
                 As melhores marcas de vapes, narguilés, sedas e acessórios importados. 

@@ -36,6 +36,7 @@ export const AdminPanel: React.FC = () => {
   const [showCatForm, setShowCatForm] = useState(false);
   const [catForm, setCatForm] = useState<Partial<Category>>({ name: '', image: '', subcategories: ['Todos'] });
   const [adminSearch, setAdminSearch] = useState('');
+  const [filterOutOfStock, setFilterOutOfStock] = useState(false);
 
   useEffect(() => { setFormSettings(settings); }, [settings]);
   useEffect(() => {
@@ -162,11 +163,17 @@ export const AdminPanel: React.FC = () => {
   );
 
 
-  const filteredAdminProducts = products.filter(p => 
-    p.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
-    p.category?.toLowerCase().includes(adminSearch.toLowerCase()) ||
-    p.subcategory?.toLowerCase().includes(adminSearch.toLowerCase())
-  );
+  const filteredAdminProducts = products.filter(p => {
+    if (filterOutOfStock) {
+      if (p.stockQuantity && p.stockQuantity > 0) return false;
+    }
+    const search = adminSearch.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(search) ||
+      p.category?.toLowerCase().includes(search) ||
+      p.subcategory?.toLowerCase().includes(search)
+    );
+  });
 
   return (
     <div className="min-h-screen flex" style={{ background: theme.bgPrimary, color: '#fff' }}>
@@ -240,6 +247,12 @@ export const AdminPanel: React.FC = () => {
                       className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-accent/40 transition-all"
                     />
                   </div>
+                  <button 
+                    onClick={() => setFilterOutOfStock(!filterOutOfStock)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 flex-shrink-0 border ${filterOutOfStock ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-black/20 text-white/50 border-white/10 hover:text-white/80'}`}
+                  >
+                    Sem Estoque
+                  </button>
                   <button onClick={openAdd}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 flex-shrink-0"
                     style={{ background: theme.gradientCta, color: '#fff', boxShadow: theme.shadowCta }}>

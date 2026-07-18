@@ -53,6 +53,17 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
   const handleSelectCategory = (id: string) => {
     setSelectedCategory(id);
     setSelectedSubcategory('Todos');
+    
+    // Smooth scroll to top of catalog section after state update
+    setTimeout(() => {
+      const catalog = document.getElementById('catalog');
+      if (catalog) {
+        const y = catalog.getBoundingClientRect().top + window.scrollY - 80; // 80px offset for navbar
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 10);
   };
 
   // Determine what view to show

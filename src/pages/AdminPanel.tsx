@@ -385,17 +385,17 @@ export const AdminPanel: React.FC = () => {
                       ? <img src={c.image} className="w-full aspect-[4/3] object-cover" />
                       : <div className="w-full aspect-[4/3]" style={{ background: bgCard }} />}
                     <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${theme.bgPrimary}EE, transparent 60%)` }} />
-                    <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end">
-                      <span className="font-serif font-bold text-sm text-white">{c.name}</span>
+                    <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end gap-1">
+                      <span className="font-serif font-bold text-sm text-white flex-grow drop-shadow-md">{c.name}</span>
                       <button onClick={() => openEditCategory(c)}
-                        className="p-1.5 rounded-lg bg-blue-500/80 text-white opacity-0 group-hover:opacity-100 transition-all mr-1"
+                        className="p-1.5 rounded-lg bg-blue-500 text-white shadow-lg transition-all"
                         >
-                        <Edit2 size={12} />
+                        <Edit2 size={14} />
                       </button>
                       <button onClick={() => deleteCategory(c.id)}
-                        className="p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-1.5 rounded-lg bg-red-500 text-white shadow-lg transition-all"
                         >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -618,7 +618,23 @@ export const AdminPanel: React.FC = () => {
         </div>
         <form onSubmit={submitCategory} className="space-y-5">
           {field('Nome', input({ required: true, value: catForm.name || '', onChange: e => setCatForm({ ...catForm, name: e.target.value }) }))}
-          {field('Imagem (URL)', input({ placeholder: 'https://...', value: catForm.image || '', onChange: e => setCatForm({ ...catForm, image: e.target.value }) }))}
+          {field('Imagem (URL ou upload)',
+            <div className="space-y-3">
+              {catForm.image && <img src={catForm.image} className="h-24 rounded-xl object-cover border" style={{ borderColor: `${accent}20` }} />}
+              <div className="flex gap-2">
+                <div className="flex-grow">
+                  {input({ placeholder: 'https://...', value: catForm.image || '', onChange: e => setCatForm({ ...catForm, image: e.target.value }) })}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs px-4 py-2 rounded-xl font-bold transition-all flex-shrink-0"
+                  style={{ background: `${accent}20`, color: accent }}>
+                  <ImageIcon size={14} />
+                  {uploading ? '...' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, url => setCatForm(prev => ({ ...prev, image: url }))); }} />
+                </label>
+              </div>
+            </div>
+          )}
           {field('Subcategorias (separadas por vírgula)', input({ placeholder: 'Todos, Premium', value: catForm.subcategories?.join(', ') || '', onChange: e => setCatForm({ ...catForm, subcategories: e.target.value.split(',').map(s => s.trim()) }) }))}
           <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105" style={{ background: theme.gradientAccent, color: theme.bgPrimary }}>
             <Save size={16} /> {editingCategory ? 'Salvar alterações' : 'Criar categoria'}

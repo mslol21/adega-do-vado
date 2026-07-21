@@ -21,6 +21,7 @@ interface CheckoutFormData {
   complement: string;
   paymentMethod: 'pix' | 'card' | 'cash';
   changeFor: string;
+  deliveryMethod: 'delivery' | 'pickup';
 }
 
 const LOCAL_STORAGE_KEY = 'tabacaria_checkout_info';
@@ -85,6 +86,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           complement: parsed.complement || '',
           paymentMethod: parsed.paymentMethod || 'pix',
           changeFor: parsed.changeFor || '',
+          deliveryMethod: parsed.deliveryMethod || 'delivery',
         };
       }
     } catch (e) {
@@ -102,6 +104,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       complement: '',
       paymentMethod: 'pix',
       changeFor: '',
+      deliveryMethod: 'delivery',
     };
   });
 
@@ -142,9 +145,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     if (cleanPhone.length < 10) return alert('Por favor, informe um telefone de contato válido.');
     const cleanCep = formData.cep.replace(/\D/g, '');
     if (cleanCep.length !== 8) return alert('Por favor, informe um CEP válido.');
-    if (!formData.street.trim()) return alert('Por favor, informe o endereço.');
-    if (!formData.number.trim()) return alert('Por favor, informe o número.');
-    if (!formData.neighborhood.trim()) return alert('Por favor, informe o bairro.');
+    if (formData.deliveryMethod === 'delivery') {
+      if (!formData.street.trim()) return alert('Por favor, informe o endereço.');
+      if (!formData.number.trim()) return alert('Por favor, informe o número.');
+      if (!formData.neighborhood.trim()) return alert('Por favor, informe o bairro.');
+    }
 
     // Save to localStorage
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(formData));
@@ -160,19 +165,30 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       paymentDesc = `Dinheiro${formData.changeFor ? ` (Troco para R$ ${formData.changeFor})` : ' (Sem troco)'}`;
     }
 
+    const deliveryFee = formData.deliveryMethod === 'delivery' ? (settings.deliveryFee || 0) : 0;
+    const finalTotal = totalPrice + deliveryFee;
+
     const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
+
+    let addressText = '';
+    if (formData.deliveryMethod === 'delivery') {
+      addressText = `*📍 Endereço de Entrega:*\n` +
+        `• CEP: ${formData.cep}\n` +
+        `• Endereço: ${formData.street.trim()}, nº ${formData.number.trim()} - ${formData.neighborhood.trim()}\n` +
+        `• Cidade: ${formData.city} - ${formData.state}\n` +
+        `${formData.complement.trim() ? `• Complemento: ${formData.complement.trim()}\n` : ''}\n` +
+        `• Taxa de Entrega: ${deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Grátis'}\n\n`;
+    } else {
+      addressText = `*📍 Retirada na Loja*\n\n`;
+    }
 
     const message = `Olá ${storeName}! Gostaria de fazer um pedido:\n\n` +
       cartText +
-      `\n\n━━━━━━━━━━━━━━━\n*💰 Total: ${totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n━━━━━━━━━━━━━━━\n\n` +
+      `\n\n━━━━━━━━━━━━━━━\n*💰 Total: ${finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n━━━━━━━━━━━━━━━\n\n` +
       `*👤 Cliente:*\n` +
       `• Nome: ${formData.name.trim()}\n` +
       `• WhatsApp: ${formData.phone}\n\n` +
-      `*📍 Endereço de Entrega:*\n` +
-      `• CEP: ${formData.cep}\n` +
-      `• Endereço: ${formData.street.trim()}, nº ${formData.number.trim()} - ${formData.neighborhood.trim()}\n` +
-      `• Cidade: ${formData.city} - ${formData.state}\n` +
-      `${formData.complement.trim() ? `• Complemento: ${formData.complement.trim()}\n` : ''}\n` +
+      addressText +
       `*💳 Pagamento:*\n` +
       `• Forma: ${paymentDesc}\n\n` +
       `_Pedido gerado via catálogo online._\n\nAguardando confirmação...`;
@@ -376,8 +392,47 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Seção Endereço de Entrega */}
+                  {/* Seção Opções de Entrega */}
                   <div className="space-y-4 pt-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em]" style={{ color: `${theme.accent}70` }}>
+                      Opções de Entrega
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, deliveryMethod: 'delivery' })}
+                        className="py-3.5 px-2 rounded-xl text-xs font-bold transition-all border text-center"
+                        style={{
+                          background: formData.deliveryMethod === 'delivery' ? `${theme.accent}15` : theme.bgSecondary,
+                          borderColor: formData.deliveryMethod === 'delivery' ? theme.accent : `${theme.accent}15`,
+                          color: formData.deliveryMethod === 'delivery' ? theme.accent : '#fff'
+                        }}
+                      >
+                        Entrega (Delivery)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, deliveryMethod: 'pickup' })}
+                        className="py-3.5 px-2 rounded-xl text-xs font-bold transition-all border text-center"
+                        style={{
+                          background: formData.deliveryMethod === 'pickup' ? `${theme.accent}15` : theme.bgSecondary,
+                          borderColor: formData.deliveryMethod === 'pickup' ? theme.accent : `${theme.accent}15`,
+                          color: formData.deliveryMethod === 'pickup' ? theme.accent : '#fff'
+                        }}
+                      >
+                        Retirar na Loja
+                      </button>
+                    </div>
+                    {settings.deliveryInfo && (
+                      <div className="text-[10px] p-3 rounded-lg border" style={{ backgroundColor: `${theme.accent}10`, borderColor: `${theme.accent}20`, color: theme.accent }}>
+                        {settings.deliveryInfo}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Seção Endereço de Entrega */}
+                  {formData.deliveryMethod === 'delivery' && (
+                  <div className="space-y-4 pt-2 animate-slide-up">
                     <h3 className="text-xs font-black uppercase tracking-[0.2em]" style={{ color: `${theme.accent}70` }}>
                       Endereço de Entrega
                     </h3>
@@ -482,6 +537,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Seção Forma de Pagamento */}
                   <div className="space-y-4 pt-2">
@@ -544,10 +600,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   </div>
                   <div className="flex items-center justify-between" style={{ color: '#fff' }}>
                     <span className="font-serif font-bold text-lg">
-                      {step === 'cart' ? 'Total do Pedido' : 'Total com Entrega'}
+                      {step === 'cart' ? 'Total do Pedido' : (formData.deliveryMethod === 'delivery' ? 'Total com Entrega' : 'Total (Retirada)')}
                     </span>
                     <span className="text-3xl font-black tabular-nums" style={{ color: theme.accent }}>
-                      {totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {(totalPrice + (step === 'checkout' && formData.deliveryMethod === 'delivery' ? (settings.deliveryFee || 0) : 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                 </div>

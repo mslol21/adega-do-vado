@@ -5,9 +5,11 @@ export const ADEGA_CONFIG: StoreConfig = {
   name: 'Adega do Vado — Bebidas',
   slogan: 'Atacado e Varejo de Bebidas em Sorocaba',
   whatsapp: '5515988320793',
-  niche: 'Bebidas, Gelo, Carvão e Artigos de Conveniência',
+  niche: 'Bebidas Geladas, Combos, Gelo e Essências',
   instagram: 'adegadovado',
   tiktok: '@adegadovado',
+  deliveryFee: 8,
+  deliveryInfo: 'Entregamos na região. Retirada gratuita no balcão.',
   hero: {
     badge: 'Sua Adega em Sorocaba desde 2008',
     title: ['Bebida Gelada e', 'Preço de Atacado'],

@@ -9,6 +9,8 @@ export const TABACARIA_CONFIG: StoreConfig = {
   niche: 'Vapes, Narguilés, Sedas e Acessórios Importados em Sorocaba',
   instagram: 'henriimports',
   tiktok: '@henriimports',
+  deliveryFee: 10,
+  deliveryInfo: 'Entregamos em Sorocaba e Votorantim. Retirada gratuita na loja.',
   hero: {
     badge: 'Artigos Importados Premium',
     title: ['Henri Imports', 'Tabacaria'],

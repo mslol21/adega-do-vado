@@ -418,6 +418,8 @@ export const AdminPanel: React.FC = () => {
                     <div className="md:col-span-2">
                       {field('Nicho / Descrição', input({ value: formSettings.niche, onChange: e => setFormSettings({ ...formSettings, niche: e.target.value }) }))}
                     </div>
+                    {field('Taxa de Entrega Padrão (R$)', input({ type: 'number', step: '0.01', value: formSettings.deliveryFee ?? '', onChange: e => setFormSettings({ ...formSettings, deliveryFee: parseFloat(e.target.value) || 0 }) }))}
+                    {field('Informações de Entrega (Aviso)', input({ placeholder: 'Ex: Entregamos apenas na região', value: formSettings.deliveryInfo || '', onChange: e => setFormSettings({ ...formSettings, deliveryInfo: e.target.value }) }))}
                   </div>
                   <button type="submit"
                     className="flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"

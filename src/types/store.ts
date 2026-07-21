@@ -51,4 +51,6 @@ export interface StoreConfig {
   benefits: BenefitConfig[];
   categories: Category[];
   products: Product[];
+  deliveryFee?: number;
+  deliveryInfo?: string;
 }

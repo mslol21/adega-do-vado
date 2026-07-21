@@ -30,7 +30,7 @@ export const fetchCoordinatesByCep = async (cep: string): Promise<{ lat: number,
       }
     }
 
-    // Fallback para OpenStreetMap Nominatim caso a BrasilAPI não tenha a coordenada do CEP
+    // Fallback para OpenStreetMap Nominatim buscando pelo CEP
     const resNominatim = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cleanCep}&country=Brazil&format=json`);
     if (resNominatim.ok) {
       const dataNominatim = await resNominatim.json();
@@ -39,6 +39,26 @@ export const fetchCoordinatesByCep = async (cep: string): Promise<{ lat: number,
           lat: parseFloat(dataNominatim[0].lat),
           lon: parseFloat(dataNominatim[0].lon)
         };
+      }
+    }
+
+    // Último recurso: Buscar logradouro via ViaCEP e depois buscar coordenada pelo endereço no Nominatim
+    const viaCepRes = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    if (viaCepRes.ok) {
+      const viaCepData = await viaCepRes.json();
+      if (!viaCepData.erro && viaCepData.localidade) {
+        const logradouroStr = viaCepData.logradouro ? `${viaCepData.logradouro}, ` : '';
+        const q = encodeURIComponent(`${logradouroStr}${viaCepData.localidade}, Brazil`);
+        const resAddress = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`);
+        if (resAddress.ok) {
+          const dataAddress = await resAddress.json();
+          if (dataAddress && dataAddress.length > 0) {
+            return {
+              lat: parseFloat(dataAddress[0].lat),
+              lon: parseFloat(dataAddress[0].lon)
+            };
+          }
+        }
       }
     }
   } catch (err) {

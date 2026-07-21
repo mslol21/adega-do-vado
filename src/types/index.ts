@@ -75,7 +75,9 @@ export type ShopSettings = {
   instagram: string;
   tiktok: string;
   slogan: string;
-  deliveryFee?: number;
+  storeCep?: string;
+  deliveryFeePerKm?: number;
+  deliveryBaseFee?: number;
   deliveryInfo?: string;
 }
 

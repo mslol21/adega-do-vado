@@ -8,8 +8,10 @@ export const ADEGA_CONFIG: StoreConfig = {
   niche: 'Bebidas Geladas, Combos, Gelo e Essências',
   instagram: 'adegadovado',
   tiktok: '@adegadovado',
-  deliveryFee: 8,
-  deliveryInfo: 'Entregamos na região. Retirada gratuita no balcão.',
+  storeCep: '18080-000',
+  deliveryFeePerKm: 1.50,
+  deliveryBaseFee: 5.00,
+  deliveryInfo: 'Entregamos na região. A taxa é calculada por km.',
   hero: {
     badge: 'Sua Adega em Sorocaba desde 2008',
     title: ['Bebida Gelada e', 'Preço de Atacado'],

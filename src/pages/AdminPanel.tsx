@@ -418,7 +418,11 @@ export const AdminPanel: React.FC = () => {
                     <div className="md:col-span-2">
                       {field('Nicho / Descrição', input({ value: formSettings.niche, onChange: e => setFormSettings({ ...formSettings, niche: e.target.value }) }))}
                     </div>
-                    {field('Taxa de Entrega Padrão (R$)', input({ type: 'number', step: '0.01', value: formSettings.deliveryFee ?? '', onChange: e => setFormSettings({ ...formSettings, deliveryFee: parseFloat(e.target.value) || 0 }) }))}
+                    {field('CEP de Origem (CEP da Loja)', input({ placeholder: '18080-000', value: formSettings.storeCep || '', onChange: e => setFormSettings({ ...formSettings, storeCep: e.target.value }) }))}
+                    <div className="grid grid-cols-2 gap-4">
+                      {field('Taxa Base (R$)', input({ type: 'number', step: '0.01', value: formSettings.deliveryBaseFee ?? '', onChange: e => setFormSettings({ ...formSettings, deliveryBaseFee: parseFloat(e.target.value) || 0 }) }))}
+                      {field('Valor por KM (R$)', input({ type: 'number', step: '0.01', value: formSettings.deliveryFeePerKm ?? '', onChange: e => setFormSettings({ ...formSettings, deliveryFeePerKm: parseFloat(e.target.value) || 0 }) }))}
+                    </div>
                     {field('Informações de Entrega (Aviso)', input({ placeholder: 'Ex: Entregamos apenas na região', value: formSettings.deliveryInfo || '', onChange: e => setFormSettings({ ...formSettings, deliveryInfo: e.target.value }) }))}
                   </div>
                   <button type="submit"

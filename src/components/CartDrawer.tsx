@@ -3,6 +3,7 @@ import { X, Trash2, Minus, Plus, MessageCircle, ShoppingBag, ArrowLeft } from 'l
 import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
+import { fetchCoordinatesByCep as fetchLatLon, calculateDistanceKm } from '../utils/distance';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -68,6 +69,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState<'cart' | 'checkout'>('cart');
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState('');
+  const [storeCoords, setStoreCoords] = useState<{lat: number, lon: number} | null>(null);
+  const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (settings.storeCep) {
+      fetchLatLon(settings.storeCep).then(coords => setStoreCoords(coords));
+    }
+  }, [settings.storeCep]);
 
   const [formData, setFormData] = useState<CheckoutFormData>(() => {
     try {
@@ -124,9 +133,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
               city: addr.cidade,
               state: addr.estado,
             }));
+            
+            // Calculate distance if store coordinates are available
+            if (storeCoords) {
+              const clientCoords = await fetchLatLon(cleanCep);
+              if (clientCoords) {
+                const dist = calculateDistanceKm(storeCoords.lat, storeCoords.lon, clientCoords.lat, clientCoords.lon);
+                setDeliveryDistanceKm(dist);
+              } else {
+                setDeliveryDistanceKm(null);
+              }
+            }
           }
         } catch (err: any) {
           setCepError(err.message || 'Erro ao buscar CEP');
+          setDeliveryDistanceKm(null);
         } finally {
           setCepLoading(false);
         }
@@ -134,8 +155,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       fetchAddress();
     } else {
       setCepError('');
+      setDeliveryDistanceKm(null);
     }
-  }, [formData.cep]);
+  }, [formData.cep, storeCoords]);
 
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +187,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       paymentDesc = `Dinheiro${formData.changeFor ? ` (Troco para R$ ${formData.changeFor})` : ' (Sem troco)'}`;
     }
 
-    const deliveryFee = formData.deliveryMethod === 'delivery' ? (settings.deliveryFee || 0) : 0;
+    let deliveryFee = 0;
+    if (formData.deliveryMethod === 'delivery' && deliveryDistanceKm !== null) {
+      deliveryFee = (settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm;
+    }
     const finalTotal = totalPrice + deliveryFee;
 
     const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
@@ -177,7 +202,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         `• Endereço: ${formData.street.trim()}, nº ${formData.number.trim()} - ${formData.neighborhood.trim()}\n` +
         `• Cidade: ${formData.city} - ${formData.state}\n` +
         `${formData.complement.trim() ? `• Complemento: ${formData.complement.trim()}\n` : ''}\n` +
-        `• Taxa de Entrega: ${deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Grátis'}\n\n`;
+        `• Distância: ${deliveryDistanceKm ? `${deliveryDistanceKm.toFixed(1)} km` : 'Não calculada'}\n` +
+        `• Taxa de Entrega: ${deliveryDistanceKm ? (deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Grátis') : 'A combinar via WhatsApp'}\n\n`;
     } else {
       addressText = `*📍 Retirada na Loja*\n\n`;
     }
@@ -535,6 +561,20 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                           placeholder="Ex: Bloco B, Apto 42 (opcional)"
                         />
                       </div>
+                      
+                      {deliveryDistanceKm !== null && (
+                        <div className="p-4 rounded-xl border flex justify-between items-center animate-fade-in" style={{ backgroundColor: `${theme.accent}10`, borderColor: `${theme.accent}30` }}>
+                          <span className="text-sm font-bold" style={{ color: theme.accent }}>Distância: {deliveryDistanceKm.toFixed(1)} km</span>
+                          <span className="text-sm font-bold" style={{ color: '#fff' }}>
+                            Taxa: {((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                      )}
+                      {formData.cep.replace(/\D/g, '').length === 8 && deliveryDistanceKm === null && !cepLoading && (
+                        <div className="p-3 rounded-xl border text-xs" style={{ backgroundColor: `rgba(255,255,255,0.05)`, borderColor: `rgba(255,255,255,0.1)`, color: '#ccc' }}>
+                          A taxa de entrega será calculada pelo WhatsApp.
+                        </div>
+                      )}
                     </div>
                   </div>
                   )}
@@ -603,7 +643,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       {step === 'cart' ? 'Total do Pedido' : (formData.deliveryMethod === 'delivery' ? 'Total com Entrega' : 'Total (Retirada)')}
                     </span>
                     <span className="text-3xl font-black tabular-nums" style={{ color: theme.accent }}>
-                      {(totalPrice + (step === 'checkout' && formData.deliveryMethod === 'delivery' ? (settings.deliveryFee || 0) : 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {(totalPrice + (step === 'checkout' && formData.deliveryMethod === 'delivery' && deliveryDistanceKm !== null ? ((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm) : 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                 </div>

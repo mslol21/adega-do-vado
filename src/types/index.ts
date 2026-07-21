@@ -75,6 +75,8 @@ export type ShopSettings = {
   instagram: string;
   tiktok: string;
   slogan: string;
+  deliveryFee?: number;
+  deliveryInfo?: string;
 }
 
 // Dummy export to ensure this is treated as a module with values if needed

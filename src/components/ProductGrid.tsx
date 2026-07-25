@@ -2,20 +2,68 @@ import React, { useState, useMemo, useRef } from 'react';
 import { ProductCard } from './ProductCard';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import type { Product } from '../types';
+
 interface ProductGridProps {
   searchQuery?: string;
   onAddItem?: (name: string) => void;
 }
 
+const CategoryRow = ({ title, products, onAdd, onSeeMore, isPromo = false }: { title: string, products: Product[], onAdd?: (name: string) => void, onSeeMore?: () => void, isPromo?: boolean }) => {
+  const { theme } = useStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (dir: number) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
+    }
+  };
+
+  if (products.length === 0) return null;
+
+  return (
+    <div className="animate-slide-up mb-12 relative group">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 px-1">
+        <div className="flex items-center gap-2">
+          <span className="w-6 h-1 rounded-full" style={{ background: isPromo ? '#EF4444' : theme.accent }} />
+          <h3 className="text-xl sm:text-2xl font-serif font-bold" style={{ color: isPromo ? '#fff' : theme.accent }}>{title}</h3>
+        </div>
+        
+        <div className="flex items-center gap-4 self-end sm:self-auto">
+          {onSeeMore && (
+            <button onClick={onSeeMore} className="text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:bg-white/5" style={{ color: theme.accent, borderColor: `${theme.accent}30` }}>
+              Ver Todos <ArrowRight size={14} />
+            </button>
+          )}
+          <div className="hidden sm:flex gap-2">
+            <button onClick={() => scroll(-1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => scroll(1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div ref={scrollRef} className="grid grid-flow-col auto-cols-[calc(50%-6px)] sm:auto-cols-[calc(33.333%-16px)] md:auto-cols-[calc(33.333%-21px)] lg:auto-cols-[calc(25%-24px)] gap-3 sm:gap-6 md:gap-8 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        {products.map(product => (
+          <div key={product.id} className="snap-start relative h-full">
+            <ProductCard product={product} onAdd={() => onAdd?.(product.name)} isPromo={isPromo} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAddItem }) => {
   const { products, categories } = useData();
   const { theme } = useStore();
 
-  // null = showing category grid; string = selected category id
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todos');
-  const promoRef = useRef<HTMLDivElement>(null);
 
   const activeCategory = categories.find(c => c.id === selectedCategory);
 
@@ -38,7 +86,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
       }
 
       // Normal navigation
-      if (!selectedCategory) return active; // Show all products if no category is selected
+      if (!selectedCategory) return active;
       
       const catMatch = p.category === selectedCategory;
       const subMatch =
@@ -50,199 +98,116 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
     });
   }, [products, selectedCategory, selectedSubcategory, searchQuery]);
 
-  const handleSelectCategory = (id: string) => {
+  const handleSelectCategory = (id: string | null) => {
     setSelectedCategory(id);
     setSelectedSubcategory('Todos');
     
-    // Smooth scroll to products section
+    // Smooth scroll to catalog section
     setTimeout(() => {
-      const prodList = document.getElementById('prod-list');
-      if (prodList) {
-        const y = prodList.getBoundingClientRect().top + window.scrollY - 80;
+      const el = document.getElementById('catalog');
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.scrollY - 80;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
     }, 10);
   };
 
-  const scrollOffers = (dir: number) => {
-    if (promoRef.current) {
-      promoRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
-    }
-  };
-
-  // Determine what view to show
   const isSearching = searchQuery.length > 0;
-  const showCategoryGrid = !isSearching;
+  
+  // Se está na tela inicial sem busca, mostramos as fileiras. Caso contrário, mostramos a grade de resultados/categoria.
+  const isHomeView = !isSearching && !selectedCategory;
 
   return (
-    <section id="catalog" className="py-20 px-4 min-h-screen" style={{ backgroundColor: theme.bgPrimary }}>
+    <section id="catalog" className="py-12 md:py-20 px-4 min-h-screen" style={{ backgroundColor: theme.bgPrimary }}>
       <div className="max-w-7xl mx-auto">
 
         {/* ── Header ─────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h2 className="text-4xl font-serif font-bold" style={{ color: theme.accent }}>
-              {isSearching ? 'Resultados da Busca' : 'Categorias'}
-            </h2>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {isSearching 
-                ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`
-                : 'Explore nosso catálogo premium'}
-            </p>
-          </div>
-        </div>
-
-        <div>
-
-          {/* ── CATEGORY GRID (visual cards) ─────────── */}
-          {showCategoryGrid && (
-            <div className="space-y-16">
-              {/* Promoções */}
-              {promoProducts.length > 0 && (
-                <div key="promo-grid"
-                  className="animate-slide-up"
-                >
-                  <div className="flex items-center gap-2 mb-6">
-                    <span className="w-8 h-1 rounded-full" style={{ background: '#EF4444' }} />
-                    <h3 className="text-2xl font-serif font-bold text-white">Ofertas Especiais</h3>
-                    <span className="w-8 h-1 rounded-full hidden sm:block" style={{ background: '#EF4444' }} />
-                    
-                    <div className="ml-auto flex gap-2">
-                      <button onClick={() => scrollOffers(-1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
-                        <ChevronLeft size={18} />
-                      </button>
-                      <button onClick={() => scrollOffers(1)} className="p-2 rounded-full border transition-all hover:bg-white/10 active:scale-95" style={{ borderColor: `${theme.accent}30`, color: theme.accent }}>
-                        <ChevronRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  <div ref={promoRef} className="grid grid-flow-col auto-cols-[calc(50%-6px)] sm:auto-cols-[calc(50%-12px)] md:auto-cols-[calc(50%-16px)] lg:auto-cols-[calc(33.333%-21px)] xl:auto-cols-[calc(25%-24px)] gap-3 sm:gap-6 md:gap-8 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-                    {promoProducts.map(product => (
-                      <div key={product.id} className="snap-start relative h-full">
-                        <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} isPromo={true} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div key="cat-grid"
-                className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 animate-slide-up"
-              >
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleSelectCategory(cat.id)}
-                  className="group relative rounded-2xl overflow-hidden text-left focus:outline-none animate-fade-in"
-                  style={{ border: `1px solid ${theme.accent}20` }}
-                >
-                  {/* Photo */}
-                  <div className="aspect-square overflow-hidden relative">
-                    {cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full" style={{ background: theme.bgMid }} />
-                    )}
-                    {/* Gradient overlay */}
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `linear-gradient(to top, ${theme.bgPrimary}EE 0%, ${theme.bgPrimary}60 50%, transparent 100%)`,
-                      }}
-                    />
-                    {/* Hover glow */}
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ background: `${theme.accent}15` }}
-                    />
-                  </div>
-
-                  {/* Label */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-3 md:p-4">
-                    <div className="font-serif font-bold text-sm md:text-lg leading-tight drop-shadow-lg" style={{ color: '#fff' }}>
-                      {cat.name}
-                    </div>
-                    {cat.subcategories && cat.subcategories.length > 1 && (
-                      <div className="hidden md:block text-[8px] mt-1 opacity-90 font-medium uppercase tracking-[0.1em]" style={{ color: theme.accentLight }}>
-                        {cat.subcategories.filter(s => s !== 'Todos').slice(0, 1).join(' · ')}
-                        {cat.subcategories.length > 2 && ' ...'}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-              </div>
+        {!isHomeView && (
+          <div className="flex items-center justify-between mb-10 animate-fade-in">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold" style={{ color: theme.accent }}>
+                {isSearching ? 'Resultados da Busca' : activeCategory?.name}
+              </h2>
+              <p className="mt-2 text-sm" style={{ color: theme.textMuted }}>
+                {isSearching 
+                  ? `${filteredProducts.length} produto${filteredProducts.length !== 1 ? 's' : ''} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`
+                  : `${filteredProducts.length} itens disponíveis nesta categoria`}
+              </p>
             </div>
-          )}
+            {selectedCategory && (
+              <button onClick={() => handleSelectCategory(null)}
+                className="text-[10px] md:text-xs font-black uppercase tracking-widest px-4 py-2 md:px-5 md:py-2.5 rounded-full border transition-all hover:bg-white/5"
+                style={{ color: theme.textMuted, borderColor: `${theme.accent}20` }}>
+                Voltar
+              </button>
+            )}
+          </div>
+        )}
 
-          {/* ── PRODUCT LISTING ──────────────────────── */}
-          <div id="prod-list" className={`animate-slide-up ${!isSearching ? 'mt-16 pt-12 border-t' : ''}`} style={{ borderColor: `${theme.accent}15` }}>
+        {/* ── HOME VIEW (CAROUSEL ROWS) ────────────── */}
+        {isHomeView && (
+          <div className="space-y-4">
+            <CategoryRow 
+              title="Ofertas Especiais" 
+              products={promoProducts} 
+              onAdd={onAddItem} 
+              isPromo={true} 
+            />
             
-            {!isSearching && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                <div>
-                  <h2 className="text-3xl font-serif font-bold" style={{ color: theme.accent }}>
-                    {selectedCategory ? activeCategory?.name : 'Todos os Produtos'}
-                  </h2>
-                  <p className="mt-1 text-xs uppercase tracking-widest font-bold" style={{ color: theme.textMuted }}>
-                    {filteredProducts.length} itens
-                  </p>
-                </div>
-                {selectedCategory && (
-                  <button onClick={() => {
-                    setSelectedCategory(null);
-                    setSelectedSubcategory('Todos');
-                  }}
-                    className="text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full border transition-all hover:bg-white/5 self-start sm:self-auto"
-                    style={{ color: theme.textMuted, borderColor: `${theme.accent}20` }}>
-                    Limpar Filtro
+            {categories.map(category => {
+              const catProducts = products.filter(p => p.category === category.id && p.isActive !== false);
+              return (
+                <CategoryRow 
+                  key={category.id}
+                  title={category.name}
+                  products={catProducts}
+                  onAdd={onAddItem}
+                  onSeeMore={() => handleSelectCategory(category.id)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── CATEGORY VIEW OR SEARCH RESULTS (GRID) ── */}
+        {!isHomeView && (
+          <div className="animate-slide-up">
+            {/* Subcategory pills - only if category is explicitly selected */}
+            {selectedCategory && !isSearching && activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-8">
+                {activeCategory.subcategories.map(sub => (
+                  <button key={sub} onClick={() => setSelectedSubcategory(sub)}
+                    className="px-4 py-2 rounded-full text-xs font-bold border transition-all"
+                    style={selectedSubcategory === sub
+                      ? { background: theme.gradientAccent, color: theme.bgPrimary, borderColor: 'transparent' }
+                      : { background: 'transparent', color: theme.textMuted, borderColor: `${theme.accent}20` }
+                    }
+                  >
+                    {sub}
                   </button>
-                )}
+                ))}
               </div>
             )}
 
-            {/* Subcategory pills - only if category is explicitly selected */}
-              {selectedCategory && !isSearching && activeCategory?.subcategories && activeCategory.subcategories.length > 1 && (
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {activeCategory.subcategories.map(sub => (
-                    <button key={sub} onClick={() => setSelectedSubcategory(sub)}
-                      className="px-4 py-2 rounded-full text-xs font-bold border transition-all"
-                      style={selectedSubcategory === sub
-                        ? { background: theme.gradientAccent, color: theme.bgPrimary, borderColor: 'transparent' }
-                        : { background: 'transparent', color: theme.textMuted, borderColor: `${theme.accent}20` }
-                      }
-                    >
-                      {sub}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Products Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
+                {filteredProducts.map(product => (
+                  <div key={product.id} className="animate-fade-in h-full">
+                    <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
+                  </div>
+                ))}
+            </div>
 
-              {/* Products */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
-                  {filteredProducts.map(product => (
-                    <div key={product.id}
-                      className="animate-fade-in"
-                    >
-                      <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
-                    </div>
-                  ))}
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-24 border rounded-3xl" style={{ borderColor: `${theme.accent}15`, background: 'rgba(0,0,0,0.2)' }}>
+                <p className="text-lg font-serif italic" style={{ color: `${theme.accent}40` }}>
+                  Nenhum produto encontrado.
+                </p>
               </div>
-
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-24">
-                  <p className="text-lg font-serif italic" style={{ color: `${theme.accent}40` }}>
-                    Nenhum produto encontrado.
-                  </p>
-                </div>
-              )}
+            )}
           </div>
+        )}
 
-        </div>
       </div>
     </section>
   );

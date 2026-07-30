@@ -165,9 +165,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     if (!formData.name.trim()) return alert('Por favor, informe seu nome.');
     const cleanPhone = formData.phone.replace(/\D/g, '');
     if (cleanPhone.length < 10) return alert('Por favor, informe um telefone de contato válido.');
-    const cleanCep = formData.cep.replace(/\D/g, '');
-    if (cleanCep.length !== 8) return alert('Por favor, informe um CEP válido.');
     if (formData.deliveryMethod === 'delivery') {
+      const cleanCep = formData.cep.replace(/\D/g, '');
+      if (cleanCep.length !== 8) return alert('Por favor, informe um CEP válido.');
       if (!formData.street.trim()) return alert('Por favor, informe o endereço.');
       if (!formData.number.trim()) return alert('Por favor, informe o número.');
       if (!formData.neighborhood.trim()) return alert('Por favor, informe o bairro.');
@@ -220,8 +220,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       `_Pedido gerado via catálogo online._\n\nAguardando confirmação...`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${settings.whatsapp}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    const cleanStorePhone = settings.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
+    // Garante o +55 se o lojista esqueceu de colocar
+    const finalPhone = cleanStorePhone.length <= 11 ? `55${cleanStorePhone}` : cleanStorePhone;
+    const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodedMessage}`;
+    
+    const newWindow = window.open(whatsappUrl, '_blank');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      window.location.href = whatsappUrl;
+    }
 
     clearCart();
     setStep('cart');

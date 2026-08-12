@@ -3,6 +3,7 @@ import type { StoreConfig } from '../types/store';
 export const ADEGA_CONFIG: StoreConfig = {
   id: 'adega',
   name: 'Adega do Vado — Bebidas',
+  logo: '/logo.png',
   slogan: 'Atacado e Varejo de Bebidas em Sorocaba',
   whatsapp: '5515988320793',
   niche: 'Bebidas Geladas, Combos, Gelo e Essências',

@@ -3,6 +3,7 @@ import { X, Trash2, Minus, Plus, MessageCircle, ShoppingBag, ArrowLeft } from 'l
 import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
+import { useOrders } from '../context/OrderContext';
 import { fetchCoordinatesByCep as fetchLatLon, calculateDistanceKm } from '../utils/distance';
 
 interface CartDrawerProps {
@@ -65,6 +66,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems, clearCart } = useCart();
   const { settings } = useData();
   const { theme } = useStore();
+  const { createOrder } = useOrders();
 
   const [step, setStep] = useState<'cart' | 'checkout'>('cart');
   const [cepLoading, setCepLoading] = useState(false);
@@ -159,7 +161,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     }
   }, [formData.cep, storeCoords]);
 
-  const handleCheckout = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name.trim()) return alert('Por favor, informe seu nome.');
@@ -192,6 +194,39 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       deliveryFee = (settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm;
     }
     const finalTotal = totalPrice + deliveryFee;
+
+    try {
+      await createOrder({
+        source: 'ONLINE',
+        order_type: formData.deliveryMethod === 'delivery' ? 'DELIVERY' : 'RETIRADA',
+        status: 'NOVO',
+        customer_name: formData.name.trim(),
+        customer_phone: formData.phone,
+        delivery_cep: formData.cep,
+        delivery_street: formData.street,
+        delivery_number: formData.number,
+        delivery_complement: formData.complement,
+        delivery_neighborhood: formData.neighborhood,
+        delivery_city: formData.city,
+        delivery_state: formData.state,
+        payment_method: formData.paymentMethod,
+        change_for: formData.changeFor ? parseFloat(formData.changeFor.replace(',', '.')) : undefined,
+        subtotal: totalPrice,
+        delivery_fee: deliveryFee,
+        discount: 0,
+        total: finalTotal,
+        items: cart.map(item => ({
+          product_id: item.id,
+          product_name: item.name + (item.selectedFlavor ? ` (${item.selectedFlavor})` : ''),
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity
+        })) as any
+      });
+    } catch (err) {
+      console.error('Erro ao salvar pedido no Supabase:', err);
+      // Continua para o WhatsApp mesmo se falhar (fallback manual)
+    }
 
     const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
 

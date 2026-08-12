@@ -5,7 +5,7 @@ import { useStore } from '../context/StoreContext';
 import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
-  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search, QrCode
+  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search, QrCode, ClipboardList
 } from 'lucide-react';
 
 type Tab = 'products' | 'categories' | 'settings' | 'qrcode';
@@ -201,10 +201,15 @@ export const AdminPanel: React.FC = () => {
         </nav>
 
         <div className="space-y-2 mt-4">
+          <Link to={`/operacao/${storeId}`}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all bg-[#C9963C]/15 border border-[#C9963C]/30 text-[#C9963C] hover:bg-[#C9963C]/25"
+          >
+            <ClipboardList size={16} /> Painel de Operação
+          </Link>
           <Link to={`/${storeId}`}
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all"
             style={{ color: `${accent}60` }}>
-            <ArrowLeft size={14} /> Ver loja
+            <ArrowLeft size={14} /> Ver catálogo da loja
           </Link>
           <button onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/admin'); }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold w-full text-red-400 hover:text-red-300 transition-all">
@@ -233,7 +238,15 @@ export const AdminPanel: React.FC = () => {
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>Produtos</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>Produtos</h1>
+                    <Link 
+                      to={`/operacao/${storeId}`}
+                      className="flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-bold bg-[#C9963C]/15 border border-[#C9963C]/30 text-[#C9963C] hover:bg-[#C9963C]/25 transition-all"
+                    >
+                      <ClipboardList size={14} /> Ver Fluxo de Operação
+                    </Link>
+                  </div>
                   <p className="text-xs mt-1" style={{ color: `${accent}60` }}>{products.length} cadastrados</p>
                 </div>
                 <div className="flex w-full md:w-auto gap-3">

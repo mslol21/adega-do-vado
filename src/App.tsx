@@ -13,6 +13,16 @@ import { useData } from './context/DataContext';
 import { DataProvider } from './context/DataContext';
 import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
+import { AuthProvider } from './context/AuthContext';
+import { OrderProvider } from './context/OrderContext';
+import { LayoutOperacao } from './pages/operacao/Layout';
+import { Dashboard } from './pages/operacao/Dashboard';
+import { Atendimento } from './pages/operacao/Atendimento';
+import { Recebimento } from './pages/operacao/Recebimento';
+import { Preparacao } from './pages/operacao/Preparacao';
+import { Separacao } from './pages/operacao/Separacao';
+import { Prontos } from './pages/operacao/Prontos';
+import { Entregas } from './pages/operacao/Entregas';
 import { TABACARIA_CONFIG } from './data/tabacaria';
 import { ADEGA_CONFIG } from './data/adega';
 import type { StoreConfig } from './types/store';
@@ -158,11 +168,15 @@ function Store() {
 function StoreWrapper({ config, children }: { config: StoreConfig; children?: React.ReactNode }) {
   return (
     <StoreProvider config={config}>
-      <DataProvider storeConfig={config}>
-        <CartProvider>
-          {children ?? <Store />}
-        </CartProvider>
-      </DataProvider>
+      <AuthProvider storeId={config.id}>
+        <DataProvider storeConfig={config}>
+          <OrderProvider storeId={config.id}>
+            <CartProvider>
+              {children ?? <Store />}
+            </CartProvider>
+          </OrderProvider>
+        </DataProvider>
+      </AuthProvider>
     </StoreProvider>
   );
 }
@@ -174,6 +188,27 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG} />} />
       <Route path="/adega" element={<StoreWrapper config={ADEGA_CONFIG} />} />
+      
+      <Route path="/operacao/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
+        <Route index element={<Dashboard />} />
+        <Route path="atendimento" element={<Atendimento />} />
+        <Route path="recebimento" element={<Recebimento />} />
+        <Route path="preparacao" element={<Preparacao />} />
+        <Route path="separacao" element={<Separacao />} />
+        <Route path="prontos" element={<Prontos />} />
+        <Route path="entregas" element={<Entregas />} />
+      </Route>
+      
+      <Route path="/operacao/adega" element={<StoreWrapper config={ADEGA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
+        <Route index element={<Dashboard />} />
+        <Route path="atendimento" element={<Atendimento />} />
+        <Route path="recebimento" element={<Recebimento />} />
+        <Route path="preparacao" element={<Preparacao />} />
+        <Route path="separacao" element={<Separacao />} />
+        <Route path="prontos" element={<Prontos />} />
+        <Route path="entregas" element={<Entregas />} />
+      </Route>
+
       <Route path="/admin/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><AdminPanel /></StoreWrapper>} />
       <Route path="/admin/adega" element={<StoreWrapper config={ADEGA_CONFIG}><AdminPanel /></StoreWrapper>} />
       <Route path="/admin" element={<AdminLogin />} />

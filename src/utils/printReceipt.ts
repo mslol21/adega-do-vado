@@ -8,10 +8,10 @@ export const printReceipt = (order: Order) => {
     const itemTotal = (item.total_price || item.unit_price * item.quantity).toFixed(2);
     return `
       <tr>
-        <td className="col-qty-name" style="width: 68%; text-align: left; padding-right: 4px; word-wrap: break-word;">
-          <b>${item.quantity}x</b> ${item.product_name}
+        <td class="col-qty-name" style="width: 65%; text-align: left; padding-right: 4px; word-wrap: break-word; font-weight: 900; font-size: 13px;">
+          <b style="font-weight: 900;">${item.quantity}x</b> ${item.product_name}
         </td>
-        <td className="col-price" style="width: 32%; text-align: right; white-space: nowrap; font-weight: bold;">
+        <td class="col-price" style="width: 35%; text-align: right; white-space: nowrap; font-weight: 900; font-size: 13px;">
           R$ ${itemTotal}
         </td>
       </tr>
@@ -44,6 +44,8 @@ export const printReceipt = (order: Order) => {
           * {
             box-sizing: border-box;
             -webkit-print-color-adjust: exact;
+            font-weight: 900 !important;
+            color: #000000 !important;
           }
           html, body {
             width: 100%;
@@ -53,51 +55,53 @@ export const printReceipt = (order: Order) => {
             background: #ffffff;
             color: #000000;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            line-height: 1.3;
+            font-size: 13px;
+            font-weight: 900 !important;
+            line-height: 1.35;
           }
           .center { text-align: center; }
-          .bold { font-weight: bold; }
-          .divider { border-top: 1px dashed #000000; margin: 6px 0; }
-          table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 4px 0; }
-          td { padding: 3px 0; vertical-align: top; }
-          .total-box { font-size: 14px; font-weight: bold; text-align: right; margin-top: 6px; padding-top: 4px; border-top: 1px solid #000000; }
-          .ticket-code { text-align: center; font-size: 20px; font-weight: bold; margin: 6px 0; border: 2px solid #000000; padding: 4px; }
+          .bold { font-weight: 900 !important; }
+          .divider { border-top: 2px solid #000000; margin: 8px 0; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 6px 0; }
+          td { padding: 4px 0; vertical-align: top; font-weight: 900 !important; }
+          p { margin: 4px 0; font-weight: 900 !important; font-size: 13px; }
+          .total-box { font-size: 16px; font-weight: 900 !important; text-align: right; margin-top: 8px; padding-top: 6px; border-top: 2px solid #000000; }
+          .ticket-code { text-align: center; font-size: 24px; font-weight: 900 !important; margin: 8px 0; border: 3px solid #000000; padding: 6px; }
           @media print {
-            body { max-width: 100%; width: 100%; padding: 2mm; }
+            body { max-width: 100%; width: 100%; padding: 2mm; font-weight: 900 !important; }
           }
         </style>
       </head>
       <body>
-        <div className="center bold" style="font-size: 15px; text-transform: uppercase;">${storeTitle}</div>
-        <div className="center" style="font-size: 10px; margin-top: 2px;">COMPROVANTE DE RETIRADA / PEDIDO</div>
+        <div class="center bold" style="font-size: 16px; text-transform: uppercase; font-weight: 900;">${storeTitle}</div>
+        <div class="center bold" style="font-size: 11px; margin-top: 2px; font-weight: 900;">COMPROVANTE DE RETIRADA / PEDIDO</div>
         
-        <div className="divider"></div>
-        <div className="ticket-code">SENHA #${order.order_number}</div>
+        <div class="divider"></div>
+        <div class="ticket-code">SENHA #${order.order_number}</div>
 
-        <p><b>TIPO:</b> ${orderTypeLabel}</p>
-        <p><b>DATA:</b> ${new Date(order.created_at || Date.now()).toLocaleString('pt-BR')}</p>
-        <p><b>CLIENTE:</b> ${order.customer_name || 'Balcão / Loja'}</p>
-        ${order.customer_phone ? `<p><b>WHATSAPP:</b> ${order.customer_phone}</p>` : ''}
-        <p><b>FORMA PGTO:</b> ${paymentLabel}</p>
+        <p><b class="bold">TIPO:</b> ${orderTypeLabel}</p>
+        <p><b class="bold">DATA:</b> ${new Date(order.created_at || Date.now()).toLocaleString('pt-BR')}</p>
+        <p><b class="bold">CLIENTE:</b> ${order.customer_name || 'Balcão / Loja'}</p>
+        ${order.customer_phone ? `<p><b class="bold">WHATSAPP:</b> ${order.customer_phone}</p>` : ''}
+        <p><b class="bold">FORMA PGTO:</b> ${paymentLabel}</p>
         
-        <div className="divider"></div>
-        <p className="bold">ITENS DO PEDIDO:</p>
+        <div class="divider"></div>
+        <p class="bold" style="font-size: 13px;">ITENS DO PEDIDO:</p>
         <table>
           <tbody>
             ${itemsHtml}
           </tbody>
         </table>
         
-        <div className="divider"></div>
+        <div class="divider"></div>
         
-        ${order.notes ? `<p><b>OBSERVAÇÕES:</b> ${order.notes}</p><div className="divider"></div>` : ''}
+        ${order.notes ? `<p><b class="bold">OBSERVAÇÕES:</b> ${order.notes}</p><div class="divider"></div>` : ''}
         
-        <div className="total-box">VALOR TOTAL: R$ ${(order.total || 0).toFixed(2)}</div>
+        <div class="total-box">VALOR TOTAL: R$ ${(order.total || 0).toFixed(2)}</div>
         
-        <div className="divider"></div>
-        <p className="center" style="font-size: 10px; margin-top: 10px;">Guarde este comprovante para retirar seu pedido.</p>
-        <p className="center bold" style="font-size: 10px;">Obrigado pela preferência!</p>
+        <div class="divider"></div>
+        <p class="center bold" style="font-size: 11px; margin-top: 10px;">Guarde este comprovante para retirar seu pedido.</p>
+        <p class="center bold" style="font-size: 11px;">Obrigado pela preferência!</p>
         
         <script>
           window.onload = function() {

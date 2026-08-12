@@ -5,13 +5,18 @@ export const printReceipt = (order: Order) => {
   if (!printWindow) return;
 
   const itemsHtml = (order.items || []).map(item => {
-    const itemTotal = (item.total_price || item.unit_price * item.quantity).toFixed(2);
+    const qty = item.quantity || 1;
+    const unitPriceNum = item.unit_price || (item.total_price ? item.total_price / qty : 0);
+    const unitPrice = unitPriceNum.toFixed(2);
+    const itemTotal = (item.total_price || unitPriceNum * qty).toFixed(2);
+
     return `
       <tr>
         <td class="col-qty-name" style="width: 65%; text-align: left; padding-right: 4px; word-wrap: break-word; font-weight: 900; font-size: 13px;">
-          <b style="font-weight: 900;">${item.quantity}x</b> ${item.product_name}
+          <b style="font-weight: 900;">${qty}x</b> ${item.product_name}
+          <div style="font-size: 11px; font-weight: 900; opacity: 0.95; margin-top: 1px;">(UN: R$ ${unitPrice})</div>
         </td>
-        <td class="col-price" style="width: 35%; text-align: right; white-space: nowrap; font-weight: 900; font-size: 13px;">
+        <td class="col-price" style="width: 35%; text-align: right; white-space: nowrap; font-weight: 900; font-size: 13px; vertical-align: top;">
           R$ ${itemTotal}
         </td>
       </tr>

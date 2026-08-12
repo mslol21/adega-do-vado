@@ -4,6 +4,8 @@ import type { Order } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { printReceipt } from '../../utils/printReceipt';
+
 interface OrderCardProps {
   order: Order;
   variant?: 'compact' | 'full';
@@ -18,54 +20,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, variant = 'full', o
 
   const handlePrint = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    if (!printWindow) return;
-
-    const itemsHtml = (order.items || []).map(item => `
-      <tr>
-        <td style="padding: 4px 0;">${item.quantity}x ${item.product_name}</td>
-        <td style="padding: 4px 0; text-align: right;">R$ ${(item.total_price || item.unit_price * item.quantity).toFixed(2)}</td>
-      </tr>
-    `).join('');
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Pedido #${order.order_number}</title>
-          <style>
-            body { font-family: monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 10px; color: #000; }
-            h2 { text-align: center; margin: 5px 0; font-size: 16px; text-transform: uppercase; }
-            p { margin: 3px 0; }
-            .divider { border-top: 1px dashed #000; margin: 8px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            .total { font-size: 14px; font-weight: bold; text-align: right; margin-top: 8px; }
-            @media print { body { width: 100%; } }
-          </style>
-        </head>
-        <body>
-          <h2>${order.store_id === 'tabacaria' ? 'TABACARIA DO VADO' : 'ADEGA DO VADO'}</h2>
-          <p style="text-align:center;">COMPROVANTE DE PEDIDO</p>
-          <div class="divider"></div>
-          <p><b>PEDIDO #${order.order_number}</b> (${order.order_type})</p>
-          <p><b>Data:</b> ${new Date(order.created_at).toLocaleString('pt-BR')}</p>
-          <p><b>Cliente:</b> ${order.customer_name || 'Balcão'}</p>
-          ${order.customer_phone ? `<p><b>Tel:</b> ${order.customer_phone}</p>` : ''}
-          <div class="divider"></div>
-          <table>
-            ${itemsHtml}
-          </table>
-          <div class="divider"></div>
-          ${order.notes ? `<p><b>Obs:</b> ${order.notes}</p><div class="divider"></div>` : ''}
-          <div class="total">TOTAL: R$ ${order.total.toFixed(2)}</div>
-          <div class="divider"></div>
-          <p style="text-align:center; font-size: 10px; margin-top: 15px;">Obrigado pela preferência!</p>
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    printReceipt(order);
   };
   
   return (
@@ -93,10 +48,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, variant = 'full', o
           <div className="flex items-center gap-2">
             <button 
               onClick={handlePrint}
-              title="Imprimir Cupom Não Fiscal"
-              className="p-1 rounded bg-white/10 hover:bg-[#C9963C]/30 text-[#C9963C] transition-all"
+              title="Imprimir Comprovante de Retirada (80mm)"
+              className="px-2.5 py-1 rounded-lg bg-[#C9963C]/20 hover:bg-[#C9963C] text-[#C9963C] hover:text-black font-bold text-[10px] flex items-center gap-1 border border-[#C9963C]/30 transition-all shadow-sm active:scale-95"
             >
               <Printer size={13} />
+              <span>Imprimir</span>
             </button>
             <div className="flex items-center gap-1 text-[#9B8E7D] text-[10px]">
               <Clock size={10} />

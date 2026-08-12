@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useOrders } from '../../context/OrderContext';
-import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Printer } from 'lucide-react';
+import { printReceipt } from '../../utils/printReceipt';
 
 export const Atendimento: React.FC = () => {
   const { products, categories } = useData();
@@ -66,13 +67,18 @@ export const Atendimento: React.FC = () => {
   const totalItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
   const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
 
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'cash'>('pix');
+
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     
-    await createOrder({
+    const created = await createOrder({
       source: 'INTERNO',
       order_type: 'BALCAO',
       status: 'NOVO',
+      customer_name: customerName.trim() || 'Cliente Balcão',
+      payment_method: paymentMethod,
       subtotal,
       delivery_fee: 0,
       discount: 0,
@@ -86,9 +92,13 @@ export const Atendimento: React.FC = () => {
       })) as any
     });
     
+    if (created) {
+      printReceipt(created);
+    }
+
     setCart([]);
+    setCustomerName('');
     setMobileTab('products');
-    alert('Pedido criado com sucesso!');
   };
 
   return (
@@ -263,17 +273,51 @@ export const Atendimento: React.FC = () => {
           )}
         </div>
 
-        <div className="p-4 sm:p-5 border-t border-[#C9963C]/20 bg-[#080508] shrink-0">
-          <div className="flex justify-between items-center mb-3">
+        <div className="p-4 sm:p-5 border-t border-[#C9963C]/20 bg-[#080508] shrink-0 space-y-3">
+          {cart.length > 0 && (
+            <div className="space-y-2 pb-2 border-b border-white/5">
+              <input
+                type="text"
+                placeholder="Nome do Cliente (opcional)"
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                className="w-full bg-[#100810] border border-[#C9963C]/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C9963C]"
+              />
+              <div className="grid grid-cols-3 gap-1 text-[11px] font-bold">
+                {[
+                  { id: 'pix', label: '⚡ PIX' },
+                  { id: 'card', label: '💳 Cartão' },
+                  { id: 'cash', label: '💵 Dinheiro' },
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.id as any)}
+                    className={`py-1.5 rounded-lg border text-center transition-all ${
+                      paymentMethod === m.id
+                        ? 'bg-[#C9963C]/20 border-[#C9963C] text-[#C9963C]'
+                        : 'bg-black/40 border-white/5 text-[#9B8E7D]'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center">
             <span className="text-xs sm:text-base text-[#9B8E7D] font-bold">Total do Pedido</span>
             <span className="text-xl sm:text-2xl font-black text-[#C9963C]">{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
           </div>
+
           <button 
             onClick={handleCheckout}
             disabled={cart.length === 0}
-            className="w-full bg-[#C9963C] text-black font-extrabold text-sm sm:text-base py-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#b08030] transition-all shadow-lg active:scale-98"
+            className="w-full bg-[#C9963C] text-black font-extrabold text-sm sm:text-base py-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#b08030] transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2"
           >
-            Finalizar Pedido
+            <Printer size={18} />
+            <span>Finalizar & Imprimir Comprovante</span>
           </button>
         </div>
       </div>

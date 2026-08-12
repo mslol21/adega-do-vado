@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
 import { useOrders } from '../../context/OrderContext';
+import { useAuth } from '../../context/AuthContext';
 import { OrderCard } from '../../components/operacao/OrderCard';
 import type { OrderStatus } from '../../types';
-import { DollarSign, TrendingUp, CreditCard, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, TrendingUp, CreditCard, Award, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { orders, loading } = useOrders();
+  const { activeRole, opEmployee, profile } = useAuth();
   const [showFinance, setShowFinance] = useState(true);
+
+  const currentRole = opEmployee?.role || activeRole || profile?.role || 'ATENDENTE';
+
+  if (currentRole !== 'ADMIN') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#080508] text-white">
+        <div className="w-16 h-16 bg-red-950/60 border border-red-500/40 rounded-2xl flex items-center justify-center mb-4 text-red-400">
+          <Lock size={32} />
+        </div>
+        <h2 className="text-2xl font-serif font-bold text-[#C9963C] mb-2">Acesso Restrito ao Administrador</h2>
+        <p className="text-sm text-[#9B8E7D] max-w-md mb-6">
+          O Dashboard com controle financeiro e visão geral da operação é exclusivo para o setor de Administração.
+        </p>
+      </div>
+    );
+  }
 
   const activeOrders = orders.filter(o => o.status !== 'CANCELADO');
   const getOrdersByStatus = (status: OrderStatus) => orders.filter(o => o.status === status);

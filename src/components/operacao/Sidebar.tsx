@@ -24,7 +24,7 @@ export const Sidebar: React.FC = () => {
   const deliveryCount = orders.filter(o => o.status === 'EM_ENTREGA').length;
 
   const allNavLinks = [
-    { to: '', end: true, label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ['ADMIN', 'GERENTE', 'ATENDENTE', 'RECEBIMENTO'] },
+    { to: '', end: true, label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ['ADMIN'] },
     { to: 'atendimento', label: 'Novo', icon: <ShoppingCart size={18} />, roles: ['ADMIN', 'GERENTE', 'ATENDENTE'] },
     { to: 'recebimento', label: 'Receber', icon: <Inbox size={18} />, count: newOrdersCount, roles: ['ADMIN', 'GERENTE', 'RECEBIMENTO'] },
     { to: 'preparacao', label: 'Preparo', icon: <ChefHat size={18} />, count: receivingCount + preparingCount, roles: ['ADMIN', 'GERENTE', 'PREPARACAO'] },

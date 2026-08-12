@@ -68,6 +68,7 @@ export const Atendimento: React.FC = () => {
   const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
 
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'cash'>('pix');
 
   const handleCheckout = async () => {
@@ -78,6 +79,7 @@ export const Atendimento: React.FC = () => {
       order_type: 'BALCAO',
       status: 'NOVO',
       customer_name: customerName.trim() || 'Cliente Balcão',
+      customer_phone: customerPhone.trim() || undefined,
       payment_method: paymentMethod,
       subtotal,
       delivery_fee: 0,
@@ -98,6 +100,7 @@ export const Atendimento: React.FC = () => {
 
     setCart([]);
     setCustomerName('');
+    setCustomerPhone('');
     setMobileTab('products');
   };
 
@@ -276,13 +279,22 @@ export const Atendimento: React.FC = () => {
         <div className="p-4 sm:p-5 border-t border-[#C9963C]/20 bg-[#080508] shrink-0 space-y-3">
           {cart.length > 0 && (
             <div className="space-y-2 pb-2 border-b border-white/5">
-              <input
-                type="text"
-                placeholder="Nome do Cliente (opcional)"
-                value={customerName}
-                onChange={e => setCustomerName(e.target.value)}
-                className="w-full bg-[#100810] border border-[#C9963C]/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C9963C]"
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Nome do Cliente (para chamada)"
+                  value={customerName}
+                  onChange={e => setCustomerName(e.target.value)}
+                  className="w-full bg-[#100810] border border-[#C9963C]/30 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C9963C]"
+                />
+                <input
+                  type="text"
+                  placeholder="WhatsApp / Tel (opcional)"
+                  value={customerPhone}
+                  onChange={e => setCustomerPhone(e.target.value)}
+                  className="w-full bg-[#100810] border border-[#C9963C]/30 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C9963C]"
+                />
+              </div>
               <div className="grid grid-cols-3 gap-1 text-[11px] font-bold">
                 {[
                   { id: 'pix', label: '⚡ PIX' },

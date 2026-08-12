@@ -40,7 +40,7 @@ export const OperacaoAuthGuard: React.FC<OperacaoAuthGuardProps> = ({ children }
 
     const success = loginOpEmployee(selectedRole, pin, employeeName.trim() || undefined);
     if (!success) {
-      setError(selectedRole === 'ADMIN' ? 'Senha de administrador incorreta (Padrão: vado2025).' : 'PIN de acesso incorreto (PIN padrão: 1234).');
+      setError(selectedRole === 'ADMIN' ? 'Senha de administrador incorreta.' : 'PIN de acesso incorreto.');
     } else {
       setActiveRole(selectedRole);
     }
@@ -125,15 +125,12 @@ export const OperacaoAuthGuard: React.FC<OperacaoAuthGuardProps> = ({ children }
             </label>
             <input
               type="password"
-              placeholder={selectedRole === 'ADMIN' ? 'Senha (ex: vado2025)' : 'PIN (Padrão: 1234)'}
+              placeholder={selectedRole === 'ADMIN' ? 'Digite a Senha' : 'Digite o PIN'}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className="w-full bg-[#080508] border border-[#C9963C]/30 rounded-xl px-4 py-3 text-base text-white outline-none focus:border-[#C9963C] tracking-widest text-center font-bold"
               autoFocus
             />
-            <p className="text-[10px] text-[#9B8E7D] text-center mt-1">
-              {selectedRole === 'ADMIN' ? 'Senha padrão: vado2025' : 'PIN padrão de operador: 1234'}
-            </p>
           </div>
 
           {/* Erro */}

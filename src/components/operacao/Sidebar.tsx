@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useOrders } from '../../context/OrderContext';
 
 export const Sidebar: React.FC = () => {
-  const { profile, activeRole, setActiveRole } = useAuth();
+  const { profile, activeRole, setActiveRole, opEmployee, logoutOpEmployee } = useAuth();
   const { orders } = useOrders();
 
   const newOrdersCount = orders.filter(o => o.status === 'NOVO').length;
@@ -98,9 +98,16 @@ export const Sidebar: React.FC = () => {
 
           <div className="bg-[#080508] p-3 rounded-xl border border-[#C9963C]/10 flex items-center justify-between">
             <div>
-              <p className="font-bold text-white text-xs">{profile?.name || 'Operador'}</p>
+              <p className="font-bold text-white text-xs">{opEmployee?.name || profile?.name || 'Operador'}</p>
               <p className="text-[9px] uppercase tracking-widest text-[#C9963C]">{currentRole}</p>
             </div>
+            <button
+              onClick={() => logoutOpEmployee()}
+              className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 rounded-lg text-[10px] font-bold transition-all"
+              title="Bloquear Terminal / Sair"
+            >
+              🔒 Sair
+            </button>
           </div>
         </div>
       </aside>
@@ -110,17 +117,26 @@ export const Sidebar: React.FC = () => {
         <div className="px-4 py-3 flex items-center justify-between border-b border-[#C9963C]/10">
           <div>
             <h2 className="font-serif font-bold text-base text-[#C9963C]">Painel de Operação</h2>
-            <p className="text-[10px] text-[#9B8E7D] uppercase tracking-widest">Setor: {currentRole}</p>
+            <p className="text-[10px] text-[#9B8E7D] uppercase tracking-widest">{opEmployee?.name || 'Operação'} ({currentRole})</p>
           </div>
-          <select
-            value={currentRole}
-            onChange={(e) => setActiveRole(e.target.value)}
-            className="bg-[#080508] border border-[#C9963C]/30 text-[#C9963C] rounded-lg p-1.5 outline-none text-[11px] font-bold"
-          >
-            {rolesOptions.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={currentRole}
+              onChange={(e) => setActiveRole(e.target.value)}
+              className="bg-[#080508] border border-[#C9963C]/30 text-[#C9963C] rounded-lg p-1.5 outline-none text-[11px] font-bold"
+            >
+              {rolesOptions.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => logoutOpEmployee()}
+              className="p-1.5 bg-red-950/60 text-red-300 border border-red-500/30 rounded-lg text-xs font-bold"
+              title="Bloquear Terminal / Sair"
+            >
+              🔒
+            </button>
+          </div>
         </div>
         
         {/* Scrollable Horizontal Tabs Bar */}

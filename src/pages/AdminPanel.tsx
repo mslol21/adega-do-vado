@@ -5,10 +5,10 @@ import { useStore } from '../context/StoreContext';
 import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
-  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search, QrCode, ClipboardList
+  Edit2, Trash2, Save, X, Image as ImageIcon, CheckCircle, Search, QrCode, ClipboardList, KeyRound, ShieldCheck
 } from 'lucide-react';
 
-type Tab = 'products' | 'categories' | 'settings' | 'qrcode';
+type Tab = 'products' | 'categories' | 'settings' | 'qrcode' | 'passwords';
 
 const emptyProduct = (): Partial<Product> => ({
   name: '', description: '', price: 0, image: '', images: [],
@@ -37,6 +37,26 @@ export const AdminPanel: React.FC = () => {
   const [catForm, setCatForm] = useState<Partial<Category>>({ name: '', image: '', subcategories: ['Todos'] });
   const [adminSearch, setAdminSearch] = useState('');
   const [filterOutOfStock, setFilterOutOfStock] = useState(false);
+
+  const [pins, setPins] = useState({
+    ADMIN: localStorage.getItem(`op_pin_ADMIN_${storeId}`) || localStorage.getItem('op_pin_ADMIN') || 'vado2025',
+    ATENDENTE: localStorage.getItem(`op_pin_ATENDENTE_${storeId}`) || localStorage.getItem('op_pin_ATENDENTE') || '1234',
+    RECEBIMENTO: localStorage.getItem(`op_pin_RECEBIMENTO_${storeId}`) || localStorage.getItem('op_pin_RECEBIMENTO') || '1234',
+    PREPARACAO: localStorage.getItem(`op_pin_PREPARACAO_${storeId}`) || localStorage.getItem('op_pin_PREPARACAO') || '1234',
+    SEPARACAO: localStorage.getItem(`op_pin_SEPARACAO_${storeId}`) || localStorage.getItem('op_pin_SEPARACAO') || '1234',
+    ENTREGA: localStorage.getItem(`op_pin_ENTREGA_${storeId}`) || localStorage.getItem('op_pin_ENTREGA') || '1234',
+  });
+  const [pinsSaved, setPinsSaved] = useState(false);
+
+  const savePins = (e: React.FormEvent) => {
+    e.preventDefault();
+    Object.entries(pins).forEach(([role, pin]) => {
+      localStorage.setItem(`op_pin_${role}_${storeId}`, pin.trim());
+      localStorage.setItem(`op_pin_${role}`, pin.trim());
+    });
+    setPinsSaved(true);
+    setTimeout(() => setPinsSaved(false), 2500);
+  };
 
   useEffect(() => { setFormSettings(settings); }, [settings]);
   useEffect(() => {
@@ -153,6 +173,7 @@ export const AdminPanel: React.FC = () => {
     { id: 'products', label: 'Produtos', icon: <ShoppingBag size={18} /> },
     { id: 'categories', label: 'Categorias', icon: <Grid size={18} /> },
     { id: 'settings', label: 'Configurações', icon: <Settings size={18} /> },
+    { id: 'passwords', label: 'Senhas de Acesso', icon: <KeyRound size={18} /> },
     { id: 'qrcode', label: 'QR Code Balcão', icon: <QrCode size={18} /> },
   ];
 
@@ -417,7 +438,72 @@ export const AdminPanel: React.FC = () => {
             </div>
           )}
 
-          {/* ════ SETTINGS TAB ════ */}
+          {/* ════ PASSWORDS TAB ════ */}
+          {tab === 'passwords' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <ShieldCheck size={28} className="text-[#C9963C]" />
+                <div>
+                  <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>Senhas & Segurança dos Setores</h1>
+                  <p className="text-xs text-[#9B8E7D]">Defina as senhas e PINs de acesso para cada setor/funcionário do painel de operação.</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-8 border max-w-2xl" style={{ background: bg, borderColor: `${accent}15` }}>
+                <form onSubmit={savePins} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {field('👑 Admin / Gerência (Senha)', input({
+                      type: 'password',
+                      placeholder: 'Senha de Admin',
+                      value: pins.ADMIN,
+                      onChange: e => setPins({ ...pins, ADMIN: e.target.value })
+                    }))}
+                    {field('🛒 Atendente / PDV (PIN)', input({
+                      type: 'text',
+                      placeholder: 'Ex: 1234',
+                      value: pins.ATENDENTE,
+                      onChange: e => setPins({ ...pins, ATENDENTE: e.target.value })
+                    }))}
+                    {field('📥 Recebimento de Pedidos (PIN)', input({
+                      type: 'text',
+                      placeholder: 'Ex: 1234',
+                      value: pins.RECEBIMENTO,
+                      onChange: e => setPins({ ...pins, RECEBIMENTO: e.target.value })
+                    }))}
+                    {field('👨‍🍳 Cozinha & Preparação (PIN)', input({
+                      type: 'text',
+                      placeholder: 'Ex: 1234',
+                      value: pins.PREPARACAO,
+                      onChange: e => setPins({ ...pins, PREPARACAO: e.target.value })
+                    }))}
+                    {field('📦 Separação de Estoque (PIN)', input({
+                      type: 'text',
+                      placeholder: 'Ex: 1234',
+                      value: pins.SEPARACAO,
+                      onChange: e => setPins({ ...pins, SEPARACAO: e.target.value })
+                    }))}
+                    {field('🛵 Motoboy & Entregas (PIN)', input({
+                      type: 'text',
+                      placeholder: 'Ex: 1234',
+                      value: pins.ENTREGA,
+                      onChange: e => setPins({ ...pins, ENTREGA: e.target.value })
+                    }))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#C9963C]/10 border border-[#C9963C]/20 text-xs text-[#E6C687] space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">💡 Dica de Segurança:</p>
+                    <p>Cada funcionário só conseguirá entrar no seu setor digitando o PIN configurado acima. Caso queira redefinir a senha de um setor, basta alterar o valor nesta tela e salvar.</p>
+                  </div>
+
+                  <button type="submit"
+                    className="flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                    style={{ background: theme.gradientAccent, color: theme.bgPrimary }}>
+                    {pinsSaved ? <><CheckCircle size={18} /> Senhas Salvas com Sucesso!</> : <><Save size={18} /> Salvar Senhas dos Setores</>}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
           {tab === 'settings' && (
             <div className="space-y-6">
               <h1 className="text-2xl font-serif font-bold" style={{ color: accent }}>Configurações da Loja</h1>

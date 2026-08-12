@@ -3,6 +3,12 @@ import { supabase, isOfflineMode } from '../lib/supabase';
 import type { Profile } from '../types';
 import type { Session, User } from '@supabase/supabase-js';
 
+interface OpEmployee {
+  role: string;
+  name: string;
+  authenticated: boolean;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -10,6 +16,9 @@ interface AuthContextType {
   loading: boolean;
   activeRole: string;
   setActiveRole: (role: string) => void;
+  opEmployee: OpEmployee | null;
+  loginOpEmployee: (role: string, pin: string, name?: string) => boolean;
+  logoutOpEmployee: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -24,9 +33,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
     return localStorage.getItem(`op_sector_role_${storeId}`) || 'ADMIN';
   });
 
+  const [opEmployee, setOpEmployee] = useState<OpEmployee | null>(() => {
+    const saved = localStorage.getItem(`op_auth_employee_${storeId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const setActiveRole = (role: string) => {
     setActiveRoleState(role);
     localStorage.setItem(`op_sector_role_${storeId}`, role);
+  };
+
+  const loginOpEmployee = (role: string, pin: string, name?: string): boolean => {
+    const cleanPin = pin.trim();
+    const customPin = localStorage.getItem(`op_pin_${role}_${storeId}`) || localStorage.getItem(`op_pin_${role}`);
+
+    let isValid = false;
+
+    if (customPin) {
+      isValid = cleanPin === customPin;
+    } else if (role === 'ADMIN') {
+      isValid = cleanPin === 'vado2025' || cleanPin === '2025' || cleanPin === 'admin';
+    } else {
+      isValid = cleanPin === '1234' || cleanPin.length >= 4;
+    }
+
+    if (isValid) {
+      const empData: OpEmployee = {
+        role,
+        name: name || `Operador ${role}`,
+        authenticated: true
+      };
+      setOpEmployee(empData);
+      setActiveRoleState(role);
+      localStorage.setItem(`op_auth_employee_${storeId}`, JSON.stringify(empData));
+      localStorage.setItem(`op_sector_role_${storeId}`, role);
+      return true;
+    }
+
+    return false;
+  };
+
+  const logoutOpEmployee = () => {
+    setOpEmployee(null);
+    localStorage.removeItem(`op_auth_employee_${storeId}`);
   };
 
   useEffect(() => {
@@ -100,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, activeRole, setActiveRole, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, activeRole, setActiveRole, opEmployee, loginOpEmployee, logoutOpEmployee, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -19,60 +19,106 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   const { profile } = useAuth();
   const { adjustStock } = useData();
 
-  useEffect(() => {
-    if (isOfflineMode) {
-      setLoading(false);
-      return;
+  const saveToLocalStorage = (ordersList: Order[]) => {
+    try {
+      localStorage.setItem(`vado_orders_${storeId}`, JSON.stringify(ordersList));
+    } catch (e) {
+      console.error('Erro ao gravar pedidos no localStorage:', e);
     }
+  };
 
+  useEffect(() => {
     fetchOrders();
 
-    // Subscribe to realtime changes in orders table
-    const orderSubscription = supabase
-      .channel(`orders-${storeId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setOrders((prev) => [payload.new as Order, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setOrders((prev) => prev.map((o) => o.id === payload.new.id ? { ...o, ...payload.new } : o));
-          } else if (payload.eventType === 'DELETE') {
-            setOrders((prev) => prev.filter((o) => o.id !== payload.old.id));
+    if (!isOfflineMode) {
+      // Subscribe to realtime changes in orders table
+      const orderSubscription = supabase
+        .channel(`orders-${storeId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              setOrders((prev) => {
+                const updated = [payload.new as Order, ...prev];
+                saveToLocalStorage(updated);
+                return updated;
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setOrders((prev) => {
+                const updated = prev.map((o) => o.id === payload.new.id ? { ...o, ...payload.new } : o);
+                saveToLocalStorage(updated);
+                return updated;
+              });
+            } else if (payload.eventType === 'DELETE') {
+              setOrders((prev) => {
+                const updated = prev.filter((o) => o.id !== payload.old.id);
+                saveToLocalStorage(updated);
+                return updated;
+              });
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(orderSubscription);
-    };
+      return () => {
+        supabase.removeChannel(orderSubscription);
+      };
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchOrders = async () => {
+    let localSaved: Order[] = [];
+    try {
+      const cached = localStorage.getItem(`vado_orders_${storeId}`);
+      if (cached) {
+        localSaved = JSON.parse(cached);
+      }
+    } catch (e) {
+      console.error('Erro ao ler cache local de pedidos:', e);
+    }
+
+    if (isOfflineMode) {
+      setOrders(localSaved);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      // We only fetch active/recent orders to avoid loading history
       const { data, error } = await supabase
         .from('orders')
         .select('*, items:order_items(*)')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false })
-        .limit(100); // Pagination could be added later
+        .limit(100);
         
       if (error) throw error;
-      setOrders(data as Order[]);
+      
+      const dbOrders = (data as Order[]) || [];
+      const combined = [...dbOrders];
+      
+      // Preserva vendas salvas localmente que ainda nao subiram pro banco
+      localSaved.forEach(lo => {
+        if (!combined.some(o => o.id === lo.id || o.order_number === lo.order_number)) {
+          combined.push(lo);
+        }
+      });
+
+      combined.sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
+
+      setOrders(combined);
+      saveToLocalStorage(combined);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.warn('Erro ao carregar do Supabase (usando backup local):', error);
+      setOrders(localSaved);
     } finally {
       setLoading(false);
     }
   };
 
   const createOrder = async (orderData: Partial<Order>) => {
-    // Generate temporary order object for instant UI update
     const tempId = 'ord_' + Math.random().toString(36).substr(2, 9);
     const now = new Date().toISOString();
     
@@ -105,8 +151,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       }))
     };
 
-    // Update local state immediately for 0ms UI response
-    setOrders(prev => [localOrder, ...prev]);
+    // Update local state and localStorage immediately for 0ms UI response & total persistence
+    setOrders(prev => {
+      const updated = [localOrder, ...prev];
+      saveToLocalStorage(updated);
+      return updated;
+    });
 
     // Baixa automática de estoque
     if (orderData.items && orderData.items.length > 0) {
@@ -118,12 +168,30 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
 
     try {
-      // 1. Insert order into Supabase
-      const { items, ...orderInfo } = orderData;
+      const { items, ...rawOrderInfo } = orderData;
+      const orderInfo: any = {
+        store_id: storeId,
+        order_number: localOrder.order_number,
+        source: rawOrderInfo.source || 'INTERNO',
+        order_type: rawOrderInfo.order_type || 'BALCAO',
+        status: rawOrderInfo.status || 'NOVO',
+        customer_name: rawOrderInfo.customer_name || 'Balcão',
+        customer_phone: rawOrderInfo.customer_phone || null,
+        subtotal: rawOrderInfo.subtotal || 0,
+        delivery_fee: rawOrderInfo.delivery_fee || 0,
+        discount: rawOrderInfo.discount || 0,
+        total: rawOrderInfo.total || 0,
+        payment_method: rawOrderInfo.payment_method || 'pix',
+        notes: rawOrderInfo.notes || null,
+      };
+
+      if (profile?.id && typeof profile.id === 'string' && profile.id.length > 10) {
+        orderInfo.created_by = profile.id;
+      }
       
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert([{ ...orderInfo, store_id: storeId, created_by: profile?.id }])
+        .insert([orderInfo])
         .select()
         .single();
         
@@ -132,8 +200,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       // 2. Insert items if any
       if (items && items.length > 0) {
         const orderItems = items.map(item => ({
-          ...item,
           order_id: order.id,
+          product_id: item.product_id || null,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          notes: item.notes || null
         }));
         
         await supabase
@@ -145,8 +218,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       await supabase.from('order_status_history').insert([{
         order_id: order.id,
         store_id: storeId,
-        to_status: order.status || 'NOVO',
-        changed_by: profile?.id
+        to_status: order.status || 'NOVO'
       }]);
 
       const finalOrder = {
@@ -155,10 +227,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       } as Order;
 
       // Replace temp local order with saved DB order
-      setOrders(prev => prev.map(o => o.id === tempId ? finalOrder : o));
+      setOrders(prev => {
+        const updated = prev.map(o => o.id === tempId ? finalOrder : o);
+        saveToLocalStorage(updated);
+        return updated;
+      });
       return finalOrder;
     } catch (error) {
-      console.warn('Persistência Supabase (usando estado local):', error);
+      console.warn('Persistência Supabase (venda salva em cache local):', error);
       return localOrder;
     }
   };
@@ -172,16 +248,20 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
 
     // 1. Atualiza o estado do React IMEDIATAMENTE (resposta instantânea no clique)
-    setOrders(prev => prev.map(o => {
-      if (o.id === orderId) {
-        return {
-          ...o,
-          status,
-          updated_at: new Date().toISOString()
-        };
-      }
-      return o;
-    }));
+    setOrders(prev => {
+      const updated = prev.map(o => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            status,
+            updated_at: new Date().toISOString()
+          };
+        }
+        return o;
+      });
+      saveToLocalStorage(updated);
+      return updated;
+    });
 
     if (isOfflineMode) {
       return;

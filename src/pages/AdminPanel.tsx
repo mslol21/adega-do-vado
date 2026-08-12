@@ -12,7 +12,7 @@ type Tab = 'products' | 'categories' | 'settings' | 'qrcode' | 'passwords';
 
 const emptyProduct = (): Partial<Product> => ({
   name: '', description: '', price: 0, image: '', images: [],
-  category: '', subcategory: 'Todos', isCustomizable: false, isActive: true,
+  category: '', subcategory: 'Todos', isCustomizable: false, isActive: true, barcode: '',
 });
 
 export const AdminPanel: React.FC = () => {
@@ -192,7 +192,8 @@ export const AdminPanel: React.FC = () => {
     return (
       p.name.toLowerCase().includes(search) ||
       p.category?.toLowerCase().includes(search) ||
-      p.subcategory?.toLowerCase().includes(search)
+      p.subcategory?.toLowerCase().includes(search) ||
+      p.barcode?.toLowerCase().includes(search)
     );
   });
 
@@ -321,7 +322,14 @@ export const AdminPanel: React.FC = () => {
                             </div>
                             <div>
                               <div className="text-sm font-bold">{p.name}</div>
-                              <div className="text-[10px]" style={{ color: `${accent}50` }}>{p.subcategory}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px]" style={{ color: `${accent}50` }}>{p.subcategory}</span>
+                                {p.barcode && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 border border-white/10 font-mono text-[#C9963C]">
+                                    📊 {p.barcode}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -614,6 +622,13 @@ export const AdminPanel: React.FC = () => {
                        placeholder: 'Ex: Menta, Morango, Uva', 
                        value: Array.isArray(form.flavors) ? form.flavors.join(', ') : (form.flavors || ''), 
                        onChange: e => setForm({ ...form, flavors: e.target.value }) 
+                     })
+                   )}
+                   {field('Código de Barras (EAN / Barcode)', 
+                     input({ 
+                       placeholder: 'Ex: 7891234567890 (Leitor bipador)', 
+                       value: form.barcode || '', 
+                       onChange: e => setForm({ ...form, barcode: e.target.value }) 
                      })
                    )}
                 </div>

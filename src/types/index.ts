@@ -50,6 +50,7 @@ export type Product = {
   wholesaleMinQuantity?: number;
   stockQuantity?: number;
   promotionalPrice?: number;
+  barcode?: string;
 }
 
 export type CartItem = Product & {

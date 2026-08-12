@@ -13,7 +13,8 @@ export const Atendimento: React.FC = () => {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                          p.category?.toLowerCase().includes(search.toLowerCase());
+                          p.category?.toLowerCase().includes(search.toLowerCase()) ||
+                          p.barcode?.toLowerCase().includes(search.toLowerCase());
     const catObj = categories.find(c => c.id === selectedCategory);
     const matchesCategory = selectedCategory === 'TODOS' || 
                             p.category === selectedCategory || 
@@ -21,6 +22,26 @@ export const Atendimento: React.FC = () => {
 
     return matchesSearch && matchesCategory;
   });
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && search.trim()) {
+      e.preventDefault();
+      const term = search.trim().toLowerCase();
+      // Procura primeiro correspondência exata de código de barras
+      const foundByBarcode = products.find(p => p.barcode && p.barcode.trim().toLowerCase() === term);
+      if (foundByBarcode) {
+        addToCart(foundByBarcode);
+        setSearch('');
+        return;
+      }
+
+      // Se houver apenas 1 produto filtrado, adiciona ele
+      if (filteredProducts.length === 1) {
+        addToCart(filteredProducts[0]);
+        setSearch('');
+      }
+    }
+  };
 
   const addToCart = (product: any) => {
     setCart(prev => {
@@ -108,10 +129,12 @@ export const Atendimento: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9B8E7D]" size={20} />
             <input 
               type="text" 
-              placeholder="Buscar produto por nome ou categoria..."
+              placeholder="Bipar código de barras ou buscar por nome..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#080508] border border-[#C9963C]/20 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-[#C9963C]"
+              onKeyDown={handleSearchKeyDown}
+              className="w-full bg-[#080508] border border-[#C9963C]/30 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-[#C9963C]"
+              autoFocus
             />
           </div>
 
@@ -160,6 +183,11 @@ export const Atendimento: React.FC = () => {
                 {p.image ? <img src={p.image} className="w-full h-full object-cover opacity-80" /> : <span className="text-xs text-[#9B8E7D]">Sem Imagem</span>}
               </div>
               <h4 className="text-xs sm:text-sm font-bold text-white flex-1 line-clamp-2">{p.name}</h4>
+              {p.barcode && (
+                <span className="text-[9px] text-[#9B8E7D] font-mono mt-1 block">
+                  📊 {p.barcode}
+                </span>
+              )}
               <p className="text-[#C9963C] font-bold mt-2 text-sm sm:text-base">{(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
             </div>
           ))}

@@ -266,20 +266,36 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     setSettings(newSettings);
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const uploadFile = async (file: File) => {
     if (isOfflineMode) {
-      // Cria uma URL local (blob) para pré-visualização caso esteja sem banco
-      return URL.createObjectURL(file);
+      return await fileToBase64(file);
     }
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${storeConfig.id}/${Math.random()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file);
-    if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
-      throw uploadError;
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${storeConfig.id}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+      if (uploadError) {
+        console.warn('Erro ou Bucket Supabase "products" nao encontrado. Convertendo para Base64:', uploadError);
+        return await fileToBase64(file);
+      }
+      const { data } = supabase.storage.from('products').getPublicUrl(fileName);
+      return data.publicUrl;
+    } catch (err) {
+      console.warn('Erro ao enviar imagem ao Supabase. Aplicando fallback Base64:', err);
+      return await fileToBase64(file);
     }
-    const { data } = supabase.storage.from('products').getPublicUrl(fileName);
-    return data.publicUrl;
   };
 
   const addCategory = async (category: Partial<Category>) => {

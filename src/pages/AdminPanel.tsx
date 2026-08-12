@@ -91,9 +91,15 @@ export const AdminPanel: React.FC = () => {
 
   const handleUpload = async (file: File, onDone: (url: string) => void) => {
     setUploading(true);
-    try { const url = await uploadFile(file); onDone(url); }
-    catch { alert('Erro no upload. Verifique o bucket Supabase.'); }
-    finally { setUploading(false); }
+    try { 
+      const url = await uploadFile(file); 
+      onDone(url); 
+    } catch (err: any) {
+      console.error('Erro no upload de foto:', err);
+      alert('Não foi possível processar a imagem. Tente uma imagem menor ou em formato JPG/PNG.');
+    } finally { 
+      setUploading(false); 
+    }
   };
 
   const openAdd = () => { setEditing(null); setForm({ ...emptyProduct(), category: categories[0]?.id }); setShowForm(true); };

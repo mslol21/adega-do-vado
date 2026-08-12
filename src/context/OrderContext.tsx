@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isOfflineMode } from '../lib/supabase';
 import type { Order, OrderStatus } from '../types';
 import { useAuth } from './AuthContext';
+import { useData } from './DataContext';
 
 interface OrderContextType {
   orders: Order[];
@@ -16,6 +17,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
+  const { adjustStock } = useData();
 
   useEffect(() => {
     if (isOfflineMode) {
@@ -106,6 +108,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     // Update local state immediately for 0ms UI response
     setOrders(prev => [localOrder, ...prev]);
 
+    // Baixa automática de estoque
+    if (orderData.items && orderData.items.length > 0) {
+      adjustStock(orderData.items as any, -1);
+    }
+
     if (isOfflineMode) {
       return localOrder;
     }
@@ -157,6 +164,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, notes?: string) => {
+    const targetOrder = orders.find(o => o.id === orderId);
+
+    // Se o pedido for cancelado, devolve os itens ao estoque
+    if (status === 'CANCELADO' && targetOrder && targetOrder.status !== 'CANCELADO' && targetOrder.items) {
+      adjustStock(targetOrder.items as any, +1);
+    }
+
     // 1. Atualiza o estado do React IMEDIATAMENTE (resposta instantânea no clique)
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {

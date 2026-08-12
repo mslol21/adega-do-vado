@@ -20,6 +20,7 @@ interface DataContextType {
   addGlobalOption: (option: Partial<GlobalOption>) => Promise<void>;
   updateGlobalOption: (option: GlobalOption) => Promise<void>;
   deleteGlobalOption: (id: string) => Promise<void>;
+  adjustStock: (items: { product_id?: string; quantity: number }[], multiplier?: number) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -366,12 +367,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     setGlobalOptions(globalOptions.filter(o => o.id !== id));
   };
 
+  const adjustStock = async (items: { product_id?: string; quantity: number }[], multiplier: number = -1) => {
+    setProducts(prev => prev.map(p => {
+      const matched = items.find(i => i.product_id === p.id);
+      if (matched && p.stockQuantity !== undefined) {
+        const newStock = Math.max(0, p.stockQuantity + (matched.quantity * multiplier));
+        return { ...p, stockQuantity: newStock };
+      }
+      return p;
+    }));
+
+    if (!isOfflineMode) {
+      for (const item of items) {
+        if (!item.product_id) continue;
+        const currentProd = products.find(p => p.id === item.product_id);
+        if (currentProd && currentProd.stockQuantity !== undefined) {
+          const newStock = Math.max(0, currentProd.stockQuantity + (item.quantity * multiplier));
+          await supabase.from('products').update({ stock_quantity: newStock }).eq('id', item.product_id);
+        }
+      }
+    }
+  };
+
   return (
     <DataContext.Provider value={{
       products, settings, loading, categories, globalOptions,
       addProduct, updateProduct, deleteProduct, updateSettings, uploadFile,
       addCategory, updateCategory, deleteCategory,
-      addGlobalOption, updateGlobalOption, deleteGlobalOption
+      addGlobalOption, updateGlobalOption, deleteGlobalOption, adjustStock
     }}>
       {children}
     </DataContext.Provider>

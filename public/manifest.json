@@ -1,0 +1,25 @@
+{
+  "name": "Adega do Vado - Bebidas & Tabacaria",
+  "short_name": "Adega do Vado",
+  "description": "Peça bebidas, charutos, essências e conveniência no aplicativo oficial da Adega do Vado.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080508",
+  "theme_color": "#C9963C",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

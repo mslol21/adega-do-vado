@@ -25,6 +25,7 @@ import { Prontos } from './pages/operacao/Prontos';
 import { Entregas } from './pages/operacao/Entregas';
 import { TABACARIA_CONFIG } from './data/tabacaria';
 import { ADEGA_CONFIG } from './data/adega';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import type { StoreConfig } from './types/store';
 import { MapPin, Phone, Lock, ArrowLeft } from 'lucide-react';
 
@@ -184,35 +185,40 @@ function StoreWrapper({ config, children }: { config: StoreConfig; children?: Re
 // ─── App root com rotas ────────────────────────────────────────────────────────
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG} />} />
-      <Route path="/adega" element={<StoreWrapper config={ADEGA_CONFIG} />} />
-      
-      <Route path="/operacao/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
-        <Route index element={<Dashboard />} />
-        <Route path="atendimento" element={<Atendimento />} />
-        <Route path="recebimento" element={<Recebimento />} />
-        <Route path="preparacao" element={<Preparacao />} />
-        <Route path="separacao" element={<Separacao />} />
-        <Route path="prontos" element={<Prontos />} />
-        <Route path="entregas" element={<Entregas />} />
-      </Route>
-      
-      <Route path="/operacao/adega" element={<StoreWrapper config={ADEGA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
-        <Route index element={<Dashboard />} />
-        <Route path="atendimento" element={<Atendimento />} />
-        <Route path="recebimento" element={<Recebimento />} />
-        <Route path="preparacao" element={<Preparacao />} />
-        <Route path="separacao" element={<Separacao />} />
-        <Route path="prontos" element={<Prontos />} />
-        <Route path="entregas" element={<Entregas />} />
-      </Route>
+    <>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG} />} />
+        <Route path="/adega" element={<StoreWrapper config={ADEGA_CONFIG} />} />
+        
+        <Route path="/operacao/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
+          <Route index element={<Dashboard />} />
+          <Route path="atendimento" element={<Atendimento />} />
+          <Route path="recebimento" element={<Recebimento />} />
+          <Route path="preparacao" element={<Preparacao />} />
+          <Route path="separacao" element={<Separacao />} />
+          <Route path="prontos" element={<Prontos />} />
+          <Route path="entregas" element={<Entregas />} />
+        </Route>
+        
+        <Route path="/operacao/adega" element={<StoreWrapper config={ADEGA_CONFIG}><LayoutOperacao /></StoreWrapper>}>
+          <Route index element={<Dashboard />} />
+          <Route path="atendimento" element={<Atendimento />} />
+          <Route path="recebimento" element={<Recebimento />} />
+          <Route path="preparacao" element={<Preparacao />} />
+          <Route path="separacao" element={<Separacao />} />
+          <Route path="prontos" element={<Prontos />} />
+          <Route path="entregas" element={<Entregas />} />
+        </Route>
 
-      <Route path="/admin/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><AdminPanel /></StoreWrapper>} />
-      <Route path="/admin/adega" element={<StoreWrapper config={ADEGA_CONFIG}><AdminPanel /></StoreWrapper>} />
-      <Route path="/admin" element={<AdminLogin />} />
-    </Routes>
+        <Route path="/admin/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><AdminPanel /></StoreWrapper>} />
+        <Route path="/admin/adega" element={<StoreWrapper config={ADEGA_CONFIG}><AdminPanel /></StoreWrapper>} />
+        <Route path="/admin" element={<AdminLogin />} />
+      </Routes>
+
+      {/* Banner / Prompt de Instalação do App (PWA) */}
+      <PWAInstallPrompt />
+    </>
   );
 }
 

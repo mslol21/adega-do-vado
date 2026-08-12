@@ -31,10 +31,31 @@
     <meta property="twitter:description" content="Seleção premium de charutos, essências de narguilé, sedas e acessórios para apreciadores exigentes." />
     <meta property="twitter:image" content="https://tabacariacalixto.com.br/og-image.png" />
 
+    <!-- PWA / App Mobile & Desktop -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#C9963C" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Adega do Vado" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(
+            (reg) => console.log('PWA ServiceWorker registrado com sucesso:', reg.scope),
+            (err) => console.log('Falha ao registrar ServiceWorker:', err)
+          );
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

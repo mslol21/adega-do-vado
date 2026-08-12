@@ -13,10 +13,12 @@ export const printReceipt = (order: Order) => {
     return `
       <tr>
         <td class="col-qty-name" style="width: 65%; text-align: left; padding-right: 4px; word-wrap: break-word; font-weight: 900; font-size: 13px;">
-          <b style="font-weight: 900;">${qty}x</b> ${item.product_name}
-          <div style="font-size: 11px; font-weight: 900; opacity: 0.95; margin-top: 1px;">(UN: R$ ${unitPrice})</div>
+          <div style="font-weight: 900; font-size: 13px;">${item.product_name}</div>
+          <div style="font-size: 12px; font-weight: 900; margin-top: 1px;">
+            ${qty} x R$ ${unitPrice}
+          </div>
         </td>
-        <td class="col-price" style="width: 35%; text-align: right; white-space: nowrap; font-weight: 900; font-size: 13px; vertical-align: top;">
+        <td class="col-price" style="width: 35%; text-align: right; white-space: nowrap; font-weight: 900; font-size: 13px; vertical-align: bottom;">
           R$ ${itemTotal}
         </td>
       </tr>

@@ -30,6 +30,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   useEffect(() => {
     fetchOrders();
 
+    // Polling de sincronização automática a cada 4 segundos para garantir sincronia em tablets e celulares
+    const syncInterval = setInterval(() => {
+      fetchOrders();
+    }, 4000);
+
     if (!isOfflineMode) {
       // Subscribe to realtime changes in orders table
       const orderSubscription = supabase
@@ -40,6 +45,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
           (payload) => {
             if (payload.eventType === 'INSERT') {
               setOrders((prev) => {
+                if (prev.some(o => o.id === payload.new.id)) return prev;
                 const updated = [payload.new as Order, ...prev];
                 saveToLocalStorage(updated);
                 return updated;
@@ -62,9 +68,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         .subscribe();
 
       return () => {
+        clearInterval(syncInterval);
         supabase.removeChannel(orderSubscription);
       };
     }
+
+    return () => {
+      clearInterval(syncInterval);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
@@ -86,7 +97,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
 
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('orders')
         .select('*, items:order_items(*)')
@@ -121,11 +131,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   const createOrder = async (orderData: Partial<Order>) => {
     const tempId = 'ord_' + Math.random().toString(36).substr(2, 9);
     const now = new Date().toISOString();
+    const maxOrderNum = orders.reduce((max, o) => Math.max(max, o.order_number || 0), 0);
+    const nextOrderNum = maxOrderNum + 1;
     
     const localOrder: Order = {
       id: tempId,
       store_id: storeId,
-      order_number: orders.length + 1,
+      order_number: nextOrderNum,
       source: orderData.source || 'INTERNO',
       order_type: orderData.order_type || 'BALCAO',
       status: orderData.status || 'NOVO',
@@ -168,10 +180,27 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
 
     try {
+      // Busca o ultimo numero de pedido gravado no Supabase para evitar conflito de chave unica
+      let dbOrderNumber = nextOrderNum;
+      try {
+        const { data: maxData } = await supabase
+          .from('orders')
+          .select('order_number')
+          .eq('store_id', storeId)
+          .order('order_number', { ascending: false })
+          .limit(1);
+
+        if (maxData && maxData.length > 0 && maxData[0].order_number >= dbOrderNumber) {
+          dbOrderNumber = maxData[0].order_number + 1;
+        }
+      } catch (err) {
+        console.warn('Erro ao consultar ultimo order_number:', err);
+      }
+
       const { items, ...rawOrderInfo } = orderData;
       const orderInfo: any = {
         store_id: storeId,
-        order_number: localOrder.order_number,
+        order_number: dbOrderNumber,
         source: rawOrderInfo.source || 'INTERNO',
         order_type: rawOrderInfo.order_type || 'BALCAO',
         status: rawOrderInfo.status || 'NOVO',
@@ -195,7 +224,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         .select()
         .single();
         
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Erro de Inserção de Pedido no Supabase:', orderError);
+        throw orderError;
+      }
       
       // 2. Insert items if any
       if (items && items.length > 0) {

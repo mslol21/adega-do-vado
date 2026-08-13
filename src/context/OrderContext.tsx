@@ -97,21 +97,45 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
 
     try {
-      const { data, error } = await supabase
+      // 1. Busca os pedidos no Supabase sem depender de relacoes de chave estrangeira no cache do schema
+      const { data: rawOrders, error } = await supabase
         .from('orders')
-        .select('*, items:order_items(*)')
+        .select('*')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false })
         .limit(100);
         
-      if (error) throw error;
+      if (error) {
+        console.warn('Erro ao consultar orders no Supabase:', error);
+        throw error;
+      }
       
-      const dbOrders = (data as Order[]) || [];
+      let dbOrders = (rawOrders as Order[]) || [];
+
+      // 2. Busca os itens de cada pedido separadamente
+      if (dbOrders.length > 0) {
+        const orderIds = dbOrders.map(o => o.id);
+        try {
+          const { data: rawItems } = await supabase
+            .from('order_items')
+            .select('*')
+            .in('order_id', orderIds);
+
+          const itemsList = rawItems || [];
+          dbOrders = dbOrders.map(o => ({
+            ...o,
+            items: itemsList.filter((i: any) => i.order_id === o.id)
+          }));
+        } catch (itemErr) {
+          console.warn('Aviso ao carregar order_items:', itemErr);
+        }
+      }
+
       const combined = [...dbOrders];
       
       // Preserva vendas salvas localmente que ainda nao subiram pro banco
       localSaved.forEach(lo => {
-        if (!combined.some(o => o.id === lo.id || o.order_number === lo.order_number)) {
+        if (!combined.some(o => o.id === lo.id || (o.order_number === lo.order_number && o.order_number > 0))) {
           combined.push(lo);
         }
       });
@@ -129,13 +153,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   };
 
   const createOrder = async (orderData: Partial<Order>) => {
-    const tempId = 'ord_' + Math.random().toString(36).substr(2, 9);
+    const newUuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
     const now = new Date().toISOString();
     const maxOrderNum = orders.reduce((max, o) => Math.max(max, o.order_number || 0), 0);
     const nextOrderNum = maxOrderNum + 1;
     
     const localOrder: Order = {
-      id: tempId,
+      id: newUuid,
       store_id: storeId,
       order_number: nextOrderNum,
       source: orderData.source || 'INTERNO',
@@ -152,8 +176,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       created_at: now,
       updated_at: now,
       items: (orderData.items || []).map((item, idx) => ({
-        id: 'item_' + idx,
-        order_id: tempId,
+        id: 'item_' + idx + '_' + Math.random().toString(36).substr(2, 5),
+        order_id: newUuid,
         product_id: item.product_id,
         product_name: item.product_name,
         quantity: item.quantity,
@@ -190,7 +214,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
           .order('order_number', { ascending: false })
           .limit(1);
 
-        if (maxData && maxData.length > 0 && maxData[0].order_number >= dbOrderNumber) {
+        if (maxData && maxData.length > 0 && typeof maxData[0].order_number === 'number' && maxData[0].order_number >= dbOrderNumber) {
           dbOrderNumber = maxData[0].order_number + 1;
         }
       } catch (err) {
@@ -199,6 +223,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
 
       const { items, ...rawOrderInfo } = orderData;
       const orderInfo: any = {
+        id: newUuid,
         store_id: storeId,
         order_number: dbOrderNumber,
         source: rawOrderInfo.source || 'INTERNO',
@@ -218,7 +243,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         orderInfo.created_by = profile.id;
       }
       
-      const { data: order, error: orderError } = await supabase
+      let order: any = null;
+      const { data: insertedData, error: orderError } = await supabase
         .from('orders')
         .insert([orderInfo])
         .select()
@@ -226,13 +252,29 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         
       if (orderError) {
         console.error('Erro de Inserção de Pedido no Supabase:', orderError);
-        throw orderError;
+        // Tenta sem order_number fixo caso haja restricoes na tabela
+        delete orderInfo.order_number;
+        const { data: retryOrder, error: retryError } = await supabase
+          .from('orders')
+          .insert([orderInfo])
+          .select()
+          .single();
+
+        if (retryError) {
+          console.error('Erro no retry de insercao:', retryError);
+          throw retryError;
+        }
+        order = retryOrder;
+      } else {
+        order = insertedData;
       }
       
+      const createdDbOrder = order || { ...orderInfo, created_at: now, updated_at: now };
+
       // 2. Insert items if any
       if (items && items.length > 0) {
         const orderItems = items.map(item => ({
-          order_id: order.id,
+          order_id: createdDbOrder.id,
           product_id: item.product_id || null,
           product_name: item.product_name,
           quantity: item.quantity,
@@ -247,20 +289,24 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       }
       
       // 3. Insert status history
-      await supabase.from('order_status_history').insert([{
-        order_id: order.id,
-        store_id: storeId,
-        to_status: order.status || 'NOVO'
-      }]);
+      try {
+        await supabase.from('order_status_history').insert([{
+          order_id: createdDbOrder.id,
+          store_id: storeId,
+          to_status: createdDbOrder.status || 'NOVO'
+        }]);
+      } catch (hErr) {
+        console.warn('Erro secundario ao registrar historico:', hErr);
+      }
 
       const finalOrder = {
-        ...order,
+        ...createdDbOrder,
         items: items || []
       } as Order;
 
       // Replace temp local order with saved DB order
       setOrders(prev => {
-        const updated = prev.map(o => o.id === tempId ? finalOrder : o);
+        const updated = prev.map(o => o.id === newUuid ? finalOrder : o);
         saveToLocalStorage(updated);
         return updated;
       });

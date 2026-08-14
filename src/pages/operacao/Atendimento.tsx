@@ -55,11 +55,15 @@ export const Atendimento: React.FC = () => {
     });
   };
 
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(i => i.id !== id));
+  };
+
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(i => {
       if (i.id === id) {
         const newQ = i.quantity + delta;
-        return newQ > 0 ? { ...i, quantity: newQ } : i;
+        return { ...i, quantity: newQ };
       }
       return i;
     }).filter(i => i.quantity > 0));
@@ -279,7 +283,11 @@ export const Atendimento: React.FC = () => {
                   <span className="text-xs sm:text-sm font-bold w-4 text-center">{item.quantity}</span>
                   <button onClick={() => updateQuantity(item.id, 1)} className="text-[#9B8E7D] hover:text-white p-1"><Plus size={14} /></button>
                 </div>
-                <button onClick={() => updateQuantity(item.id, -item.quantity)} className="text-red-400 hover:text-red-300 p-1">
+                <button 
+                  onClick={() => removeFromCart(item.id)} 
+                  title="Remover Item" 
+                  className="text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-all active:scale-90"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>

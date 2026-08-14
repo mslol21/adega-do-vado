@@ -13,7 +13,7 @@ export const Prontos: React.FC = () => {
         <p className="text-xs sm:text-sm text-[#9B8E7D] mt-1">Aguardando retirada pelo cliente ou envio para entrega.</p>
       </header>
       <div className="p-4 sm:p-8 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {separados.map(order => (
             <OrderCard 
               key={order.id} 
@@ -22,24 +22,26 @@ export const Prontos: React.FC = () => {
                 order.order_type === 'DELIVERY' ? (
                   <button 
                     onClick={() => updateOrderStatus(order.id, 'EM_ENTREGA')}
-                    className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors"
+                    className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-purple-400/30 flex items-center justify-center gap-2"
                   >
-                    Enviar para Entrega
+                    <span>Enviar para Entrega</span>
+                    <span className="opacity-80">🚚</span>
                   </button>
                 ) : (
                   <button 
                     onClick={() => updateOrderStatus(order.id, 'CONCLUIDO')}
-                    className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors"
+                    className="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-emerald-400/30 flex items-center justify-center gap-2"
                   >
-                    Entregar ao Cliente
+                    <span>Entregar ao Cliente</span>
+                    <span className="opacity-80">✓</span>
                   </button>
                 )
               }
             />
           ))}
           {separados.length === 0 && (
-            <div className="col-span-full text-center py-20 text-[#9B8E7D]">
-              Nenhum pedido pronto.
+            <div className="col-span-full text-center py-20 text-[#9B8E7D] bg-white/[0.02] border border-[#C9963C]/10 rounded-2xl">
+              Nenhum pedido pronto no momento.
             </div>
           )}
         </div>

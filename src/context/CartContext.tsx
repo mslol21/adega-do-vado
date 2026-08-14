@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Product, CartItem, CartContextType } from '../types';
+import { getItemTotalPrice } from '../utils/price';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -47,11 +48,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = cart.reduce((acc, item) => {
-    const isWholesale = item.wholesalePrice && item.wholesaleMinQuantity && item.quantity >= item.wholesaleMinQuantity;
-    const activePrice = isWholesale ? item.wholesalePrice : item.price;
-    return acc + (activePrice || 0) * item.quantity;
-  }, 0);
+  const totalPrice = cart.reduce((acc, item) => acc + getItemTotalPrice(item), 0);
 
   return (
     <CartContext.Provider

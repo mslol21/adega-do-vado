@@ -5,6 +5,7 @@ import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 import { useOrders } from '../context/OrderContext';
 import { fetchCoordinatesByCep as fetchLatLon, calculateDistanceKm } from '../utils/distance';
+import { getItemUnitPrice, getItemTotalPrice } from '../utils/price';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -215,20 +216,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         delivery_fee: deliveryFee,
         discount: 0,
         total: finalTotal,
-        items: cart.map(item => ({
-          product_id: item.id,
-          product_name: item.name + (item.selectedFlavor ? ` (${item.selectedFlavor})` : ''),
-          quantity: item.quantity,
-          unit_price: item.price,
-          total_price: item.price * item.quantity
-        })) as any
+        items: cart.map(item => {
+          const unitPrice = getItemUnitPrice(item);
+          return {
+            product_id: item.id,
+            product_name: item.name + (item.selectedFlavor ? ` (${item.selectedFlavor})` : ''),
+            quantity: item.quantity,
+            unit_price: unitPrice,
+            total_price: unitPrice * item.quantity
+          };
+        }) as any
       });
     } catch (err) {
       console.error('Erro ao salvar pedido no Supabase:', err);
       // Continua para o WhatsApp mesmo se falhar (fallback manual)
     }
 
-    const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
+    const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
 
     let addressText = '';
     if (formData.deliveryMethod === 'delivery') {
@@ -394,9 +398,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                           </div>
                           
                           <div className="flex items-center justify-between mt-4">
-                            <span className="font-bold text-lg tabular-nums" style={{ color: theme.accent }}>
-                              {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                            </span>
+                            <div className="flex items-baseline gap-2">
+                              {item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price && (
+                                <span className="text-xs line-through opacity-50 font-bold" style={{ color: theme.textMuted }}>
+                                  {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </span>
+                              )}
+                              <span className="font-bold text-lg tabular-nums" style={{ color: theme.accent }}>
+                                {getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-4 px-4 py-2 rounded-xl border shadow-lg"
                                  style={{ backgroundColor: `${theme.bgPrimary}CC`, borderColor: `${theme.accent}15` }}>
                               <button

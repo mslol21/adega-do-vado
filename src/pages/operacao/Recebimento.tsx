@@ -13,7 +13,7 @@ export const Recebimento: React.FC = () => {
         <p className="text-xs sm:text-sm text-[#9B8E7D] mt-1">Aceite os pedidos para enviá-los à preparação.</p>
       </header>
       <div className="p-4 sm:p-8 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {novos.map(order => (
             <OrderCard 
               key={order.id} 
@@ -22,15 +22,16 @@ export const Recebimento: React.FC = () => {
               actionButton={
                 <button 
                   onClick={() => updateOrderStatus(order.id, 'RECEBIDO')}
-                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
+                  className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-blue-400/30 flex items-center justify-center gap-2"
                 >
-                  Receber Pedido
+                  <span>Receber Pedido</span>
+                  <span className="text-xs font-normal opacity-80">→</span>
                 </button>
               }
             />
           ))}
           {novos.length === 0 && (
-            <div className="col-span-full text-center py-20 text-[#9B8E7D]">
+            <div className="col-span-full text-center py-20 text-[#9B8E7D] bg-white/[0.02] border border-[#C9963C]/10 rounded-2xl">
               Nenhum pedido novo no momento.
             </div>
           )}

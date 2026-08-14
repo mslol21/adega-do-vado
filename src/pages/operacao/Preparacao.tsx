@@ -13,7 +13,7 @@ export const Preparacao: React.FC = () => {
         <header className="px-4 sm:px-6 py-4 border-b border-[#C9963C]/10 bg-[#100810]">
           <h2 className="text-lg sm:text-xl font-bold text-[#C9963C]">Aguardando Preparação</h2>
         </header>
-        <div className="p-4 sm:p-6 flex-1 overflow-y-auto grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto grid gap-4 grid-cols-1 xl:grid-cols-2">
           {recebidos.map(order => (
             <OrderCard 
               key={order.id} 
@@ -21,20 +21,26 @@ export const Preparacao: React.FC = () => {
               actionButton={
                 <button 
                   onClick={() => updateOrderStatus(order.id, 'EM_PREPARACAO')}
-                  className="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition-colors"
+                  className="w-full py-3 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-amber-400/30 flex items-center justify-center gap-2"
                 >
-                  Iniciar Preparação
+                  <span>Iniciar Preparação</span>
+                  <span className="opacity-80">→</span>
                 </button>
               }
             />
           ))}
+          {recebidos.length === 0 && (
+            <div className="col-span-full text-center py-12 text-[#9B8E7D] bg-white/[0.02] border border-[#C9963C]/10 rounded-2xl">
+              Nenhum pedido aguardando preparação.
+            </div>
+          )}
         </div>
       </div>
       <div className="flex-1 flex flex-col">
         <header className="px-4 sm:px-6 py-4 border-b border-[#C9963C]/10 bg-[#100810]">
           <h2 className="text-lg sm:text-xl font-bold text-[#C9963C]">Em Preparação</h2>
         </header>
-        <div className="p-4 sm:p-6 flex-1 overflow-y-auto grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto grid gap-4 grid-cols-1 xl:grid-cols-2">
           {emPreparacao.map(order => (
             <OrderCard 
               key={order.id} 
@@ -42,13 +48,19 @@ export const Preparacao: React.FC = () => {
               actionButton={
                 <button 
                   onClick={() => updateOrderStatus(order.id, 'EM_SEPARACAO')}
-                  className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition-colors"
+                  className="w-full py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 hover:from-yellow-400 hover:to-amber-400 text-black font-extrabold text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-yellow-300/40 flex items-center justify-center gap-2"
                 >
-                  Concluir Preparação
+                  <span>Concluir Preparação</span>
+                  <span>✓</span>
                 </button>
               }
             />
           ))}
+          {emPreparacao.length === 0 && (
+            <div className="col-span-full text-center py-12 text-[#9B8E7D] bg-white/[0.02] border border-[#C9963C]/10 rounded-2xl">
+              Nenhum pedido em preparação no momento.
+            </div>
+          )}
         </div>
       </div>
     </div>

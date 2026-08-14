@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useOrders } from '../../context/OrderContext';
 import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Printer } from 'lucide-react';
 import { printReceipt } from '../../utils/printReceipt';
+import { getItemUnitPrice, getItemTotalPrice } from '../../utils/price';
 
 export const Atendimento: React.FC = () => {
   const { products, categories } = useData();
@@ -65,7 +66,7 @@ export const Atendimento: React.FC = () => {
   };
 
   const totalItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+  const subtotal = cart.reduce((acc, i) => acc + getItemTotalPrice(i), 0);
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -85,13 +86,16 @@ export const Atendimento: React.FC = () => {
       delivery_fee: 0,
       discount: 0,
       total: subtotal,
-      items: cart.map(item => ({
-        product_id: item.id,
-        product_name: item.name,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity
-      })) as any
+      items: cart.map(item => {
+        const unitPrice = getItemUnitPrice(item);
+        return {
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: unitPrice,
+          total_price: unitPrice * item.quantity
+        };
+      }) as any
     });
     
     if (created) {
@@ -201,7 +205,18 @@ export const Atendimento: React.FC = () => {
                   📊 {p.barcode}
                 </span>
               )}
-              <p className="text-[#C9963C] font-bold mt-2 text-sm sm:text-base">{(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
+              {p.promotionalPrice && p.promotionalPrice > 0 && getItemUnitPrice(p) < p.price ? (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className="text-[#C9963C] font-bold text-sm sm:text-base">
+                    {getItemUnitPrice(p).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
+                    {p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[#C9963C] font-bold mt-2 text-sm sm:text-base">{(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
+              )}
             </div>
           ))}
         </div>
@@ -249,7 +264,14 @@ export const Atendimento: React.FC = () => {
             <div key={item.id} className="flex flex-col bg-black/40 border border-[#C9963C]/10 rounded-xl p-3">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-bold text-xs sm:text-sm text-white">{item.name}</span>
-                <span className="text-[#C9963C] font-bold text-xs sm:text-sm">{(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+                <div className="flex items-baseline gap-1.5">
+                  {item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price && (
+                    <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
+                      {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                    </span>
+                  )}
+                  <span className="text-[#C9963C] font-bold text-xs sm:text-sm">{getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+                </div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3 bg-black rounded-lg px-2 py-1 border border-[#C9963C]/20">

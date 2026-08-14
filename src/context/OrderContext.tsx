@@ -119,11 +119,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         
       if (error) {
         if (error.code === '42P17') {
-          console.error('⚠️ ALERTA SUPABASE: Foi detectada uma política RLS com recursão infinita na tabela "profiles" ou "orders" no Supabase (Erro 42P17). Execute o script SQL de correção fornecido para desativar a política recursiva.');
+          console.error('⚠️ ALERTA SUPABASE: Política RLS antiga com recursão detectada no Supabase (Erro 42P17). Execute o script SQL fornecido para apagar todas as políticas antigas dinamicamente.');
         } else {
           console.warn('Erro ao consultar orders no Supabase:', error);
         }
-        throw error;
+        setOrders(localSaved);
+        return;
       }
       
       let dbOrders = (rawOrders as Order[]) || [];

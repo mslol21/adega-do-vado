@@ -30,6 +30,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   useEffect(() => {
     fetchOrders();
 
+    // Sincronização entre abas no mesmo navegador/dispositivo
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === `vado_orders_${storeId}` && e.newValue) {
+        try {
+          setOrders(JSON.parse(e.newValue));
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
     // Polling de sincronização automática a cada 4 segundos para garantir sincronia em tablets e celulares
     const syncInterval = setInterval(() => {
       fetchOrders();
@@ -68,12 +78,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
         .subscribe();
 
       return () => {
+        window.removeEventListener('storage', handleStorage);
         clearInterval(syncInterval);
         supabase.removeChannel(orderSubscription);
       };
     }
 
     return () => {
+      window.removeEventListener('storage', handleStorage);
       clearInterval(syncInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

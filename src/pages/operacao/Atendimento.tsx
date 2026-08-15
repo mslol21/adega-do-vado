@@ -69,8 +69,19 @@ export const Atendimento: React.FC = () => {
     }).filter(i => i.quantity > 0));
   };
 
+  const updateItemDiscount = (id: string, discount: number) => {
+    setCart(prev => prev.map(i => {
+      if (i.id === id) {
+        return { ...i, itemDiscount: Math.max(0, discount) };
+      }
+      return i;
+    }));
+  };
+
   const totalItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
   const subtotal = cart.reduce((acc, i) => acc + getItemTotalPrice(i), 0);
+  const totalDiscount = cart.reduce((acc, i) => acc + Math.max(0, i.itemDiscount || 0), 0);
+  const finalTotal = Math.max(0, subtotal - totalDiscount);
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -88,16 +99,20 @@ export const Atendimento: React.FC = () => {
       payment_method: paymentMethod,
       subtotal,
       delivery_fee: 0,
-      discount: 0,
-      total: subtotal,
+      discount: totalDiscount,
+      total: finalTotal,
       items: cart.map(item => {
-        const unitPrice = getItemUnitPrice(item);
+        const baseUnit = getItemUnitPrice(item);
+        const grossTotal = getItemTotalPrice(item);
+        const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
+        const netTotal = grossTotal - itemDiscount;
+        const unitPrice = item.quantity > 0 ? netTotal / item.quantity : baseUnit;
         return {
           product_id: item.id,
-          product_name: item.name,
+          product_name: item.name + (itemDiscount > 0 ? ` (Desc: R$ ${itemDiscount.toFixed(2)})` : ''),
           quantity: item.quantity,
           unit_price: unitPrice,
-          total_price: unitPrice * item.quantity
+          total_price: netTotal
         };
       }) as any
     });
@@ -230,7 +245,7 @@ export const Atendimento: React.FC = () => {
           <div className="lg:hidden fixed bottom-16 left-4 right-4 z-40 bg-[#C9963C] text-black p-3.5 rounded-2xl flex justify-between items-center shadow-2xl animate-slide-up">
             <div>
               <p className="font-extrabold text-sm">{totalItemsCount} {totalItemsCount === 1 ? 'item' : 'itens'}</p>
-              <p className="text-xs font-bold opacity-80">{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
+              <p className="text-xs font-bold opacity-80">{finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
             </div>
             <button 
               onClick={() => setMobileTab('cart')}
@@ -264,35 +279,56 @@ export const Atendimento: React.FC = () => {
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[180px] max-h-[calc(100vh-250px)] lg:max-h-none">
-          {cart.map(item => (
-            <div key={item.id} className="flex flex-col bg-black/40 border border-[#C9963C]/10 rounded-xl p-3">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-bold text-xs sm:text-sm text-white">{item.name}</span>
-                <div className="flex items-baseline gap-1.5">
-                  {item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price && (
-                    <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
-                      {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
-                    </span>
-                  )}
-                  <span className="text-[#C9963C] font-bold text-xs sm:text-sm">{getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+          {cart.map(item => {
+            const grossTotal = getItemTotalPrice(item);
+            const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
+            const netTotal = grossTotal - itemDiscount;
+
+            return (
+              <div key={item.id} className="flex flex-col bg-black/40 border border-[#C9963C]/10 rounded-xl p-3 space-y-2">
+                <div className="flex justify-between items-start">
+                  <span className="font-bold text-xs sm:text-sm text-white">{item.name}</span>
+                  <div className="flex items-baseline gap-1.5 text-right">
+                    {(itemDiscount > 0 || (item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price)) && (
+                      <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
+                        {grossTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                      </span>
+                    )}
+                    <span className="text-[#C9963C] font-bold text-xs sm:text-sm">{netTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center gap-2 pt-1 border-t border-white/5">
+                  <div className="flex items-center gap-3 bg-black rounded-lg px-2 py-1 border border-[#C9963C]/20">
+                    <button onClick={() => updateQuantity(item.id, -1)} className="text-[#9B8E7D] hover:text-white p-1"><Minus size={14} /></button>
+                    <span className="text-xs sm:text-sm font-bold w-4 text-center">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} className="text-[#9B8E7D] hover:text-white p-1"><Plus size={14} /></button>
+                  </div>
+                  
+                  {/* Campo de Desconto no Item */}
+                  <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-[#C9963C]/20" title="Desconto no item em R$">
+                    <span className="text-[10px] text-[#9B8E7D] font-bold uppercase">Desc R$</span>
+                    <input
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      placeholder="0,00"
+                      value={item.itemDiscount !== undefined && item.itemDiscount !== 0 ? item.itemDiscount : ''}
+                      onChange={(e) => updateItemDiscount(item.id, parseFloat(e.target.value) || 0)}
+                      className="w-16 bg-transparent text-xs font-bold text-[#C9963C] outline-none tabular-nums text-right placeholder-[#9B8E7D]/40"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => removeFromCart(item.id)} 
+                    title="Remover Item" 
+                    className="text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-all active:scale-90"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3 bg-black rounded-lg px-2 py-1 border border-[#C9963C]/20">
-                  <button onClick={() => updateQuantity(item.id, -1)} className="text-[#9B8E7D] hover:text-white p-1"><Minus size={14} /></button>
-                  <span className="text-xs sm:text-sm font-bold w-4 text-center">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.id, 1)} className="text-[#9B8E7D] hover:text-white p-1"><Plus size={14} /></button>
-                </div>
-                <button 
-                  onClick={() => removeFromCart(item.id)} 
-                  title="Remover Item" 
-                  className="text-red-400 hover:text-red-300 p-1.5 hover:bg-red-500/10 rounded-lg transition-all active:scale-90"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {cart.length === 0 && (
             <div className="text-center text-[#9B8E7D] italic py-12 text-sm">
               Nenhum item selecionado. <br />
@@ -348,10 +384,27 @@ export const Atendimento: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-between items-center">
-            <span className="text-xs sm:text-base text-[#9B8E7D] font-bold">Total do Pedido</span>
-            <span className="text-xl sm:text-2xl font-black text-[#C9963C]">{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
-          </div>
+          {totalDiscount > 0 ? (
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs text-[#9B8E7D]">
+                <span>Subtotal</span>
+                <span>{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-red-400 font-bold">
+                <span>Desconto nos Itens</span>
+                <span>-{totalDiscount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1.5 border-t border-white/10">
+                <span className="text-xs sm:text-base text-white font-bold">Total do Pedido</span>
+                <span className="text-xl sm:text-2xl font-black text-[#C9963C]">{finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center">
+              <span className="text-xs sm:text-base text-[#9B8E7D] font-bold">Total do Pedido</span>
+              <span className="text-xl sm:text-2xl font-black text-[#C9963C]">{finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>
+            </div>
+          )}
 
           <button 
             onClick={handleCheckout}

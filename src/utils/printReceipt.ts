@@ -104,6 +104,10 @@ export const printReceipt = (order: Order) => {
         
         ${order.notes ? `<p><b class="bold">OBSERVAÇÕES:</b> ${order.notes}</p><div class="divider"></div>` : ''}
         
+        ${order.discount && order.discount > 0 ? `
+          <div style="font-size: 13px; font-weight: 900; text-align: right; margin-top: 4px;">SUBTOTAL: R$ ${(order.subtotal || 0).toFixed(2)}</div>
+          <div style="font-size: 13px; font-weight: 900; text-align: right; margin-top: 2px;">DESCONTO: -R$ ${(order.discount).toFixed(2)}</div>
+        ` : ''}
         <div class="total-box">VALOR TOTAL: R$ ${(order.total || 0).toFixed(2)}</div>
         
         <div class="divider"></div>

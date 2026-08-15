@@ -25,7 +25,7 @@ export const Sidebar: React.FC = () => {
 
   const allNavLinks = [
     { to: '', end: true, label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ['ADMIN'] },
-    { to: 'atendimento', label: 'Novo', icon: <ShoppingCart size={18} />, roles: ['ADMIN', 'GERENTE', 'ATENDENTE'] },
+    { to: 'atendimento', label: 'Frente de Caixa', icon: <ShoppingCart size={18} />, roles: ['ADMIN', 'GERENTE', 'ATENDENTE'] },
     { to: 'recebimento', label: 'Receber', icon: <Inbox size={18} />, count: newOrdersCount, roles: ['ADMIN', 'GERENTE', 'RECEBIMENTO'] },
     { to: 'preparacao', label: 'Preparo', icon: <ChefHat size={18} />, count: receivingCount + preparingCount, roles: ['ADMIN', 'GERENTE', 'PREPARACAO'] },
     { to: 'separacao', label: 'Separação', icon: <PackageSearch size={18} />, count: separatingCount, roles: ['ADMIN', 'GERENTE', 'SEPARACAO'] },

@@ -217,7 +217,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         discount: 0,
         total: finalTotal,
         items: cart.map(item => {
-          const unitPrice = getItemUnitPrice(item);
+          const unitPrice = getItemUnitPrice(item, undefined, cart);
           return {
             product_id: item.id,
             product_name: item.name + (item.selectedFlavor ? ` (${item.selectedFlavor})` : ''),
@@ -232,7 +232,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       // Continua para o WhatsApp mesmo se falhar (fallback manual)
     }
 
-    const cartText = cart.map(item => `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}\n   ${getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`).join('\n\n');
+    const cartText = cart.map(item => {
+      const unitPrice = getItemUnitPrice(item, undefined, cart);
+      const total = unitPrice * item.quantity;
+      const totalProductQty = cart.filter(i => i.id === item.id).reduce((sum, i) => sum + i.quantity, 0);
+      const isWholesale = Boolean(
+        item.wholesalePrice &&
+        item.wholesaleMinQuantity &&
+        totalProductQty >= Number(item.wholesaleMinQuantity)
+      );
+      return `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}${isWholesale ? ' *(Preço de Atacado)*' : ''}\n   ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+    }).join('\n\n');
 
     let addressText = '';
     if (formData.deliveryMethod === 'delivery') {
@@ -359,77 +369,102 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {cart.map((item) => (
-                      <div 
-                        key={`${item.id}-${item.name}-${item.selectedFlavor || ''}`}
-                        className="flex gap-5 p-4 rounded-[24px] border group transition-all duration-500 animate-slide-in-right"
-                        style={{ 
-                          backgroundColor: `${theme.bgSecondary}60`, 
-                          borderColor: `${theme.accent}05` 
-                        }}
-                      >
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border shadow-inner group-hover:border-accent transition-colors"
-                             style={{ backgroundColor: theme.bgPrimary, borderColor: `${theme.accent}10` }}>
-                          <img 
-                            src={item.image} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
-                          />
-                        </div>
-                        <div className="flex-grow flex flex-col justify-between py-1">
-                          <div className="flex justify-between items-start gap-4">
-                            <div>
-                              <h4 className="font-bold text-sm line-clamp-2 leading-tight mb-1 transition-colors" style={{ color: '#fff' }}>
-                                {item.name}
-                              </h4>
-                              <p className="text-[9px] uppercase tracking-widest font-medium" style={{ color: `${theme.accent}40` }}>
-                                {item.category} {item.selectedFlavor ? `• Sabor: ${item.selectedFlavor}` : ''}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeFromCart(item.id, item.name, item.selectedFlavor)}
-                              className="transition-all p-1 rounded-lg"
-                              style={{ color: `${theme.accent}20` }}
-                              onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'}
-                              onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = `${theme.accent}20`}
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                    {cart.map((item) => {
+                      const unitPrice = getItemUnitPrice(item, undefined, cart);
+                      const itemTotal = unitPrice * item.quantity;
+                      const totalProductQty = cart.filter(i => i.id === item.id).reduce((sum, i) => sum + i.quantity, 0);
+                      const isWholesale = Boolean(
+                        item.wholesalePrice &&
+                        item.wholesaleMinQuantity &&
+                        totalProductQty >= Number(item.wholesaleMinQuantity)
+                      );
+                      const hasDiscount = unitPrice < Number(item.price);
+                      const remainingWholesale = (item.wholesalePrice && item.wholesaleMinQuantity && totalProductQty < Number(item.wholesaleMinQuantity))
+                        ? Number(item.wholesaleMinQuantity) - totalProductQty
+                        : 0;
+
+                      return (
+                        <div 
+                          key={`${item.id}-${item.name}-${item.selectedFlavor || ''}`}
+                          className="flex gap-5 p-4 rounded-[24px] border group transition-all duration-500 animate-slide-in-right"
+                          style={{ 
+                            backgroundColor: `${theme.bgSecondary}60`, 
+                            borderColor: isWholesale ? '#10B98140' : `${theme.accent}05` 
+                          }}
+                        >
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border shadow-inner group-hover:border-accent transition-colors"
+                               style={{ backgroundColor: theme.bgPrimary, borderColor: isWholesale ? '#10B98130' : `${theme.accent}10` }}>
+                            <img 
+                              src={item.image} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
+                            />
                           </div>
-                          
-                          <div className="flex items-center justify-between mt-4">
-                            <div className="flex items-baseline gap-2">
-                              {item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price && (
-                                <span className="text-xs line-through opacity-50 font-bold" style={{ color: theme.textMuted }}>
-                                  {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          <div className="flex-grow flex flex-col justify-between py-1">
+                            <div className="flex justify-between items-start gap-4">
+                              <div>
+                                <h4 className="font-bold text-sm line-clamp-2 leading-tight mb-1 transition-colors" style={{ color: '#fff' }}>
+                                  {item.name}
+                                </h4>
+                                <p className="text-[9px] uppercase tracking-widest font-medium" style={{ color: `${theme.accent}40` }}>
+                                  {item.category} {item.selectedFlavor ? `• Sabor: ${item.selectedFlavor}` : ''}
+                                </p>
+                                {isWholesale && (
+                                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    🏷️ Atacado ({Number(unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un)
+                                  </span>
+                                )}
+                                {!isWholesale && remainingWholesale > 0 && (
+                                  <p className="text-[9px] font-bold text-amber-400/90 mt-1">
+                                    +{remainingWholesale} un p/ atacado ({Number(item.wholesalePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => removeFromCart(item.id, item.name, item.selectedFlavor)}
+                                className="transition-all p-1 rounded-lg"
+                                style={{ color: `${theme.accent}20` }}
+                                onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'}
+                                onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = `${theme.accent}20`}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-baseline gap-2">
+                                {hasDiscount && (
+                                  <span className="text-xs line-through opacity-50 font-bold" style={{ color: theme.textMuted }}>
+                                    {(Number(item.price) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                  </span>
+                                )}
+                                <span className="font-bold text-lg tabular-nums" style={{ color: isWholesale ? '#10B981' : theme.accent }}>
+                                  {itemTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </span>
-                              )}
-                              <span className="font-bold text-lg tabular-nums" style={{ color: theme.accent }}>
-                                {getItemTotalPrice(item).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 px-4 py-2 rounded-xl border shadow-lg"
-                                 style={{ backgroundColor: `${theme.bgPrimary}CC`, borderColor: `${theme.accent}15` }}>
-                              <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1, item.name, item.selectedFlavor)}
-                                className="transition-all active:scale-75"
-                                style={{ color: `${theme.accent}40` }}
-                              >
-                                <Minus size={14} strokeWidth={3} />
-                              </button>
-                              <span className="text-sm font-black w-6 text-center tabular-nums" style={{ color: theme.accent }}>{item.quantity}</span>
-                              <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.name, item.selectedFlavor)}
-                                className="transition-all active:scale-75"
-                                style={{ color: `${theme.accent}40` }}
-                              >
-                                <Plus size={14} strokeWidth={3} />
-                              </button>
+                              </div>
+                              <div className="flex items-center gap-4 px-4 py-2 rounded-xl border shadow-lg"
+                                   style={{ backgroundColor: `${theme.bgPrimary}CC`, borderColor: `${theme.accent}15` }}>
+                                <button
+                                  onClick={() => updateQuantity(item.id, item.quantity - 1, item.name, item.selectedFlavor)}
+                                  className="transition-all active:scale-75"
+                                  style={{ color: `${theme.accent}40` }}
+                                >
+                                  <Minus size={14} strokeWidth={3} />
+                                </button>
+                                <span className="text-sm font-black w-6 text-center tabular-nums" style={{ color: theme.accent }}>{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1, item.name, item.selectedFlavor)}
+                                  className="transition-all active:scale-75"
+                                  style={{ color: `${theme.accent}40` }}
+                                >
+                                  <Plus size={14} strokeWidth={3} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               ) : (

@@ -79,7 +79,7 @@ export const Atendimento: React.FC = () => {
   };
 
   const totalItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const subtotal = cart.reduce((acc, i) => acc + getItemTotalPrice(i), 0);
+  const subtotal = cart.reduce((acc, i) => acc + getItemTotalPrice(i, cart), 0);
   const totalDiscount = cart.reduce((acc, i) => acc + Math.max(0, i.itemDiscount || 0), 0);
   const finalTotal = Math.max(0, subtotal - totalDiscount);
 
@@ -102,8 +102,8 @@ export const Atendimento: React.FC = () => {
       discount: totalDiscount,
       total: finalTotal,
       items: cart.map(item => {
-        const baseUnit = getItemUnitPrice(item);
-        const grossTotal = getItemTotalPrice(item);
+        const baseUnit = getItemUnitPrice(item, undefined, cart);
+        const grossTotal = getItemTotalPrice(item, cart);
         const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
         const netTotal = grossTotal - itemDiscount;
         const unitPrice = item.quantity > 0 ? netTotal / item.quantity : baseUnit;
@@ -280,18 +280,19 @@ export const Atendimento: React.FC = () => {
         
         <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[180px] max-h-[calc(100vh-250px)] lg:max-h-none">
           {cart.map(item => {
-            const grossTotal = getItemTotalPrice(item);
+            const grossTotal = getItemTotalPrice(item, cart);
             const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
             const netTotal = grossTotal - itemDiscount;
+            const unitPrice = getItemUnitPrice(item, undefined, cart);
 
             return (
               <div key={item.id} className="flex flex-col bg-black/40 border border-[#C9963C]/10 rounded-xl p-3 space-y-2">
                 <div className="flex justify-between items-start">
                   <span className="font-bold text-xs sm:text-sm text-white">{item.name}</span>
                   <div className="flex items-baseline gap-1.5 text-right">
-                    {(itemDiscount > 0 || (item.promotionalPrice && item.promotionalPrice > 0 && getItemUnitPrice(item) < item.price)) && (
+                    {(itemDiscount > 0 || unitPrice < Number(item.price)) && (
                       <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
-                        {grossTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                        {(Number(item.price) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
                       </span>
                     )}
                     <span className="text-[#C9963C] font-bold text-xs sm:text-sm">{netTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</span>

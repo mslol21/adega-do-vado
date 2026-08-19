@@ -75,13 +75,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
           isActive: p.is_active,
           flavors: p.available_colors,
           hasNameOption: p.has_name_option,
-          namePrice: p.name_price,
+          namePrice: p.name_price !== null && p.name_price !== undefined ? parseFloat(String(p.name_price).replace(',', '.')) : undefined,
           variations: p.variations || [],
           customizationLists: p.customization_lists || [],
-          wholesalePrice: p.wholesale_price,
-          wholesaleMinQuantity: p.wholesale_min_quantity,
-          stockQuantity: p.stock_quantity,
-          promotionalPrice: p.promotional_price
+          price: p.price !== null && p.price !== undefined ? parseFloat(String(p.price).replace(',', '.')) : 0,
+          wholesalePrice: p.wholesale_price !== null && p.wholesale_price !== undefined && p.wholesale_price !== '' ? parseFloat(String(p.wholesale_price).replace(',', '.')) : undefined,
+          wholesaleMinQuantity: p.wholesale_min_quantity !== null && p.wholesale_min_quantity !== undefined && p.wholesale_min_quantity !== '' ? parseInt(String(p.wholesale_min_quantity), 10) : undefined,
+          stockQuantity: p.stock_quantity !== null && p.stock_quantity !== undefined && p.stock_quantity !== '' ? parseInt(String(p.stock_quantity), 10) : 0,
+          promotionalPrice: p.promotional_price !== null && p.promotional_price !== undefined && p.promotional_price !== '' ? parseFloat(String(p.promotional_price).replace(',', '.')) : undefined
         }));
         setProducts(mappedProducts);
       } else {

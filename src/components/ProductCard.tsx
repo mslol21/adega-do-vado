@@ -163,23 +163,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
         <div className="flex items-center justify-between pt-1 sm:pt-2">
           <div className="flex flex-col">
             <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-widest" style={{ color: theme.textMuted }}>Unidade</span>
-            {product.promotionalPrice && product.promotionalPrice > 0 ? (
+            {product.promotionalPrice && Number(product.promotionalPrice) > 0 ? (
               <div className="flex flex-col">
                 <span className="text-[10px] sm:text-xs line-through" style={{ color: theme.textMuted }}>
-                  R$ {product.price.toFixed(2)}
+                  R$ {Number(product.price).toFixed(2)}
                 </span>
                 <span className="text-base sm:text-xl font-bold" style={{ color: '#EF4444' }}>
-                  R$ {product.promotionalPrice.toFixed(2)}
+                  R$ {Number(product.promotionalPrice).toFixed(2)}
                 </span>
               </div>
             ) : (
               <span className="text-base sm:text-xl font-bold" style={{ color: theme.accent }}>
-                R$ {product.price.toFixed(2)}
+                R$ {Number(product.price).toFixed(2)}
               </span>
             )}
-            {product.wholesalePrice && (
+            {product.wholesalePrice && Number(product.wholesalePrice) > 0 && (
               <span className="text-[8px] sm:text-[10px] font-black leading-tight mt-0.5" style={{ color: theme.accentLight }}>
-                Atacado: R$ {product.wholesalePrice.toFixed(2)} <br className="sm:hidden" />({product.wholesaleMinQuantity}+ un)
+                Atacado: R$ {Number(product.wholesalePrice).toFixed(2)} <br className="sm:hidden" />({product.wholesaleMinQuantity || 1}+ un)
               </span>
             )}
             

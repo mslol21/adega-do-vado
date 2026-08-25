@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 import { useOrders } from '../context/OrderContext';
-import { fetchCoordinatesByCep as fetchLatLon, calculateDistanceKm } from '../utils/distance';
+import { fetchCoordinatesByCep as fetchLatLon, fetchCoordinatesByAddress, calculateDrivingDistanceKm } from '../utils/distance';
 import { getItemUnitPrice } from '../utils/price';
 
 interface CartDrawerProps {
@@ -74,6 +74,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const [cepError, setCepError] = useState('');
   const [storeCoords, setStoreCoords] = useState<{lat: number, lon: number} | null>(null);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
+  const [deliveryRouteInfo, setDeliveryRouteInfo] = useState<{ isRoadRoute?: boolean; durationMinutes?: number } | null>(null);
 
   useEffect(() => {
     if (settings.storeCep) {
@@ -123,7 +124,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const cleanCep = formData.cep.replace(/\D/g, '');
     if (cleanCep.length === 8) {
-      const fetchAddress = async () => {
+      const fetchAddressAndDistance = async () => {
         setCepLoading(true);
         setCepError('');
         try {
@@ -131,34 +132,54 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           if (addr) {
             setFormData(prev => ({
               ...prev,
-              street: addr.logradouro,
-              neighborhood: addr.bairro,
+              street: prev.street || addr.logradouro,
+              neighborhood: prev.neighborhood || addr.bairro,
               city: addr.cidade,
               state: addr.estado,
             }));
             
-            // Calculate distance if store coordinates are available
+            // Calcula rota veicular real se as coordenadas da loja estiverem disponíveis
             if (storeCoords) {
-              const clientCoords = await fetchLatLon(cleanCep);
+              const clientCoords = await fetchCoordinatesByAddress({
+                cep: cleanCep,
+                street: addr.logradouro || formData.street,
+                number: formData.number,
+                neighborhood: addr.bairro || formData.neighborhood,
+                city: addr.cidade,
+                state: addr.estado,
+              });
+
               if (clientCoords) {
-                const dist = calculateDistanceKm(storeCoords.lat, storeCoords.lon, clientCoords.lat, clientCoords.lon);
-                setDeliveryDistanceKm(dist);
+                const route = await calculateDrivingDistanceKm(
+                  storeCoords.lat,
+                  storeCoords.lon,
+                  clientCoords.lat,
+                  clientCoords.lon
+                );
+                setDeliveryDistanceKm(route.distanceKm);
+                setDeliveryRouteInfo({
+                  isRoadRoute: route.isRoadRoute,
+                  durationMinutes: route.durationMinutes
+                });
               } else {
                 setDeliveryDistanceKm(null);
+                setDeliveryRouteInfo(null);
               }
             }
           }
         } catch (err: any) {
           setCepError(err.message || 'Erro ao buscar CEP');
           setDeliveryDistanceKm(null);
+          setDeliveryRouteInfo(null);
         } finally {
           setCepLoading(false);
         }
       };
-      fetchAddress();
+      fetchAddressAndDistance();
     } else {
       setCepError('');
       setDeliveryDistanceKm(null);
+      setDeliveryRouteInfo(null);
     }
   }, [formData.cep, storeCoords]);
 
@@ -251,7 +272,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         `• Endereço: ${formData.street.trim()}, nº ${formData.number.trim()} - ${formData.neighborhood.trim()}\n` +
         `• Cidade: ${formData.city} - ${formData.state}\n` +
         `${formData.complement.trim() ? `• Complemento: ${formData.complement.trim()}\n` : ''}\n` +
-        `• Distância: ${deliveryDistanceKm ? `${deliveryDistanceKm.toFixed(1)} km` : 'Não calculada'}\n` +
+        `• Distância: ${deliveryDistanceKm ? `${deliveryDistanceKm.toFixed(1)} km${deliveryRouteInfo?.isRoadRoute ? ' (via rotas de trânsito)' : ''}` : 'Não calculada'}\n` +
         `• Taxa de Entrega: ${deliveryDistanceKm ? (deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Grátis') : 'A combinar via WhatsApp'}\n\n`;
     } else {
       addressText = `*📍 Retirada na Loja*\n\n`;
@@ -651,11 +672,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       </div>
                       
                       {deliveryDistanceKm !== null && (
-                        <div className="p-4 rounded-xl border flex justify-between items-center animate-fade-in" style={{ backgroundColor: `${theme.accent}10`, borderColor: `${theme.accent}30` }}>
-                          <span className="text-sm font-bold" style={{ color: theme.accent }}>Distância: {deliveryDistanceKm.toFixed(1)} km</span>
-                          <span className="text-sm font-bold" style={{ color: '#fff' }}>
-                            Taxa: {((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </span>
+                        <div className="p-4 rounded-xl border flex flex-col gap-2 animate-fade-in" style={{ backgroundColor: `${theme.accent}10`, borderColor: `${theme.accent}30` }}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-bold" style={{ color: theme.accent }}>
+                                Distância: {deliveryDistanceKm.toFixed(1)} km
+                              </span>
+                              {deliveryRouteInfo?.isRoadRoute && (
+                                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                  🛣️ Rota real
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-white">
+                              Taxa: {((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          </div>
+                          {deliveryRouteInfo?.durationMinutes && (
+                            <p className="text-[10px] text-white/60">
+                              ⏱️ Trajeto estimado: ~{deliveryRouteInfo.durationMinutes} min
+                            </p>
+                          )}
                         </div>
                       )}
                       {formData.cep.replace(/\D/g, '').length === 8 && deliveryDistanceKm === null && !cepLoading && (

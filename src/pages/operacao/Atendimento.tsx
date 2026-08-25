@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useOrders } from '../../context/OrderContext';
-import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Printer } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Printer, Sparkles, X, Check } from 'lucide-react';
 import { printReceipt } from '../../utils/printReceipt';
 import { getItemUnitPrice, getItemTotalPrice } from '../../utils/price';
+import { getProductFlavors } from '../../utils/flavors';
 
 export const Atendimento: React.FC = () => {
   const { products, categories } = useData();
@@ -12,6 +13,8 @@ export const Atendimento: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
   const [cart, setCart] = useState<any[]>([]);
   const [mobileTab, setMobileTab] = useState<'products' | 'cart'>('products');
+  const [flavorModalProduct, setFlavorModalProduct] = useState<any | null>(null);
+  const [selectedFlavorInModal, setSelectedFlavorInModal] = useState<string>('');
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -25,6 +28,16 @@ export const Atendimento: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleProductClick = (p: any) => {
+    const flavors = getProductFlavors(p);
+    if (flavors.length > 0) {
+      setSelectedFlavorInModal(flavors[0]);
+      setFlavorModalProduct(p);
+      return;
+    }
+    addToCart(p);
+  };
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && search.trim()) {
       e.preventDefault();
@@ -32,26 +45,27 @@ export const Atendimento: React.FC = () => {
       // Procura primeiro correspondência exata de código de barras
       const foundByBarcode = products.find(p => p.barcode && p.barcode.trim().toLowerCase() === term);
       if (foundByBarcode) {
-        addToCart(foundByBarcode);
+        handleProductClick(foundByBarcode);
         setSearch('');
         return;
       }
 
-      // Se houver apenas 1 produto filtrado, adiciona ele
+      // Se houver apenas 1 produto filtrado, aciona ele
       if (filteredProducts.length === 1) {
-        addToCart(filteredProducts[0]);
+        handleProductClick(filteredProducts[0]);
         setSearch('');
       }
     }
   };
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: any, flavor?: string) => {
+    const itemKey = flavor ? `${product.id}-${flavor}` : product.id;
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
+      const existing = prev.find(i => (i.id === itemKey));
       if (existing) {
-        return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.id === itemKey ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, id: itemKey, originalProductId: product.id, selectedFlavor: flavor, quantity: 1 }];
     });
   };
 
@@ -107,9 +121,11 @@ export const Atendimento: React.FC = () => {
         const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
         const netTotal = grossTotal - itemDiscount;
         const unitPrice = item.quantity > 0 ? netTotal / item.quantity : baseUnit;
+        const flavorText = item.selectedFlavor ? ` (${item.selectedFlavor})` : '';
+        const descText = itemDiscount > 0 ? ` (Desc: R$ ${itemDiscount.toFixed(2)})` : '';
         return {
-          product_id: item.id,
-          product_name: item.name + (itemDiscount > 0 ? ` (Desc: R$ ${itemDiscount.toFixed(2)})` : ''),
+          product_id: item.originalProductId || item.id,
+          product_name: item.name + flavorText + descText,
           quantity: item.quantity,
           unit_price: unitPrice,
           total_price: netTotal
@@ -209,35 +225,44 @@ export const Atendimento: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pb-28 lg:pb-4">
-          {filteredProducts.map(p => (
-            <div 
-              key={p.id} 
-              onClick={() => addToCart(p)}
-              className="bg-[#100810] border border-[#C9963C]/10 rounded-xl p-3 cursor-pointer hover:border-[#C9963C]/50 transition-all flex flex-col active:scale-95"
-            >
-              <div className="h-24 bg-black/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                {p.image ? <img src={p.image} className="w-full h-full object-cover opacity-80" /> : <span className="text-xs text-[#9B8E7D]">Sem Imagem</span>}
-              </div>
-              <h4 className="text-xs sm:text-sm font-bold text-white flex-1 line-clamp-2">{p.name}</h4>
-              {p.barcode && (
-                <span className="text-[9px] text-[#9B8E7D] font-mono mt-1 block">
-                  📊 {p.barcode}
-                </span>
-              )}
-              {p.promotionalPrice && p.promotionalPrice > 0 && getItemUnitPrice(p) < p.price ? (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-[#C9963C] font-bold text-sm sm:text-base">
-                    {getItemUnitPrice(p).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
-                    {p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
-                  </span>
+          {filteredProducts.map(p => {
+            const flavors = getProductFlavors(p);
+
+            return (
+              <div 
+                key={p.id} 
+                onClick={() => handleProductClick(p)}
+                className="bg-[#100810] border border-[#C9963C]/10 rounded-xl p-3 cursor-pointer hover:border-[#C9963C]/50 transition-all flex flex-col active:scale-95 relative group"
+              >
+                <div className="h-24 bg-black/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                  {p.image ? <img src={p.image} className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform" /> : <span className="text-xs text-[#9B8E7D]">Sem Imagem</span>}
                 </div>
-              ) : (
-                <p className="text-[#C9963C] font-bold mt-2 text-sm sm:text-base">{(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
-              )}
-            </div>
-          ))}
+                <h4 className="text-xs sm:text-sm font-bold text-white flex-1 line-clamp-2">{p.name}</h4>
+                {flavors.length > 0 && (
+                  <span className="text-[9px] text-[#C9963C] font-bold mt-1 flex items-center gap-1">
+                    <Sparkles size={10} /> {flavors.length} Sabores
+                  </span>
+                )}
+                {p.barcode && (
+                  <span className="text-[9px] text-[#9B8E7D] font-mono mt-1 block">
+                    📊 {p.barcode}
+                  </span>
+                )}
+                {p.promotionalPrice && p.promotionalPrice > 0 && getItemUnitPrice(p) < p.price ? (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <span className="text-[#C9963C] font-bold text-sm sm:text-base">
+                      {getItemUnitPrice(p).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
+                      {p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[#C9963C] font-bold mt-2 text-sm sm:text-base">{(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'})}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Floating Cart Banner on Mobile */}
@@ -288,7 +313,14 @@ export const Atendimento: React.FC = () => {
             return (
               <div key={item.id} className="flex flex-col bg-black/40 border border-[#C9963C]/10 rounded-xl p-3 space-y-2">
                 <div className="flex justify-between items-start">
-                  <span className="font-bold text-xs sm:text-sm text-white">{item.name}</span>
+                  <div>
+                    <span className="font-bold text-xs sm:text-sm text-white block">{item.name}</span>
+                    {item.selectedFlavor && (
+                      <span className="text-[10px] text-[#C9963C] font-bold block mt-0.5">
+                        Sabor: {item.selectedFlavor}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-baseline gap-1.5 text-right">
                     {(itemDiscount > 0 || unitPrice < Number(item.price)) && (
                       <span className="text-[10px] sm:text-xs text-[#9B8E7D] line-through">
@@ -417,6 +449,68 @@ export const Atendimento: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal de Escolha de Sabor no PDV */}
+      {flavorModalProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#100810] border border-[#C9963C]/30 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#C9963C]/10 pb-3">
+              <div>
+                <h3 className="font-bold text-sm text-white">{flavorModalProduct.name}</h3>
+                <span className="text-xs text-[#C9963C]">Selecione o Sabor / Opção</span>
+              </div>
+              <button 
+                onClick={() => setFlavorModalProduct(null)} 
+                className="p-1.5 rounded-lg text-[#9B8E7D] hover:text-white hover:bg-white/10"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+              {getProductFlavors(flavorModalProduct).map(f => {
+                const isSelected = selectedFlavorInModal === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setSelectedFlavorInModal(f)}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all ${
+                      isSelected 
+                        ? 'bg-[#C9963C] text-black border-[#C9963C]' 
+                        : 'bg-black/40 text-white border-white/10 hover:border-[#C9963C]/40'
+                    }`}
+                  >
+                    <span>{f}</span>
+                    {isSelected && <Check size={14} strokeWidth={3} />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#C9963C]/10">
+              <button
+                type="button"
+                onClick={() => setFlavorModalProduct(null)}
+                className="px-4 py-2 text-xs font-bold text-[#9B8E7D] hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addToCart(flavorModalProduct, selectedFlavorInModal);
+                  setFlavorModalProduct(null);
+                }}
+                disabled={!selectedFlavorInModal}
+                className="px-5 py-2 rounded-xl bg-[#C9963C] text-black text-xs font-bold hover:bg-[#b08030] transition-all disabled:opacity-40"
+              >
+                Adicionar ao Pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

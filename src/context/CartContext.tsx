@@ -14,16 +14,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('pedido-zap-cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
+    const qtyToAdd = Math.max(1, quantity);
     setCart((prevCart) => {
       // Use name + id + selectedFlavor as a unique key for customized items
       const existingItem = prevCart.find((item) => item.id === product.id && item.name === product.name && item.selectedFlavor === product.selectedFlavor);
       if (existingItem) {
         return prevCart.map((item) =>
-          (item.id === product.id && item.name === product.name && item.selectedFlavor === product.selectedFlavor) ? { ...item, quantity: item.quantity + 1 } : item
+          (item.id === product.id && item.name === product.name && item.selectedFlavor === product.selectedFlavor) ? { ...item, quantity: item.quantity + qtyToAdd } : item
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [...prevCart, { ...product, quantity: qtyToAdd }];
     });
   };
 

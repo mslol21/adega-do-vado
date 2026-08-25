@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 import { useOrders } from '../context/OrderContext';
+import { fetchCoordinatesByCep as fetchLatLon, calculateDistanceKm } from '../utils/distance';
 import { getItemUnitPrice } from '../utils/price';
 
 interface CartDrawerProps {

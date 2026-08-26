@@ -8,6 +8,11 @@ export interface RouteResult {
   isRoadRoute: boolean;
 }
 
+const NOMINATIM_HEADERS = {
+  'User-Agent': 'AdegaDoVadoDelivery/1.0 (delivery@adegadovado.com.br)',
+  'Accept-Language': 'pt-BR'
+};
+
 /**
  * Calcula a distância geodésica em linha reta (fórmula de Haversine).
  */
@@ -31,7 +36,7 @@ export const calculateStraightDistanceKm = (
 };
 
 /**
- * Retorna estimativa por linha reta com fator de correção (para compatibilidade legada síncrona).
+ * Retorna estimativa por linha reta com fator de correção urbano (para compatibilidade legada síncrona).
  */
 export const calculateDistanceKm = (
   lat1: number,
@@ -40,12 +45,12 @@ export const calculateDistanceKm = (
   lon2: number
 ): number => {
   const straight = calculateStraightDistanceKm(lat1, lon1, lat2, lon2);
-  return Number((straight * 1.35).toFixed(2));
+  return Number((straight * 1.3).toFixed(2));
 };
 
 /**
- * Calcula a distância real de condução veicular por rotas de trânsito (OSRM / OpenStreetMap).
- * Retorna a distância exata em km e a duração estimada em minutos.
+ * Calcula a rota de MENOR DISTÂNCIA veicular por ruas e avenidas reais (OSRM / OpenStreetMap).
+ * Avalia todas as rotas alternativas disponíveis para encontrar a menor quilometragem viária.
  */
 export const calculateDrivingDistanceKm = async (
   lat1: number,
@@ -53,27 +58,31 @@ export const calculateDrivingDistanceKm = async (
   lat2: number,
   lon2: number
 ): Promise<RouteResult> => {
-  // Se as coordenadas forem praticamente idênticas
-  if (Math.abs(lat1 - lat2) < 0.0001 && Math.abs(lon1 - lon2) < 0.0001) {
+  // Se as coordenadas forem praticamente idênticas (mesmo local/mesma rua)
+  if (Math.abs(lat1 - lat2) < 0.0003 && Math.abs(lon1 - lon2) < 0.0003) {
     return { distanceKm: 0.1, durationMinutes: 1, isRoadRoute: true };
   }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    // OSRM espera formato lon,lat;lon,lat
-    const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+    // OSRM com alternativas para encontrar o menor trajeto por ruas
+    const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false&alternatives=true`;
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
-        // Distância retornada pelo OSRM é em metros
-        const distanceKm = Math.max(0.1, Number((route.distance / 1000).toFixed(2)));
-        const durationMinutes = route.duration ? Math.round(route.duration / 60) : undefined;
+        // Seleciona a rota com a MENOR distância em metros entre as opções
+        const shortestRoute = data.routes.reduce(
+          (min: any, r: any) => (r.distance < min.distance ? r : min),
+          data.routes[0]
+        );
+
+        const distanceKm = Math.max(0.1, Number((shortestRoute.distance / 1000).toFixed(2)));
+        const durationMinutes = shortestRoute.duration ? Math.round(shortestRoute.duration / 60) : undefined;
 
         return {
           distanceKm,
@@ -83,19 +92,36 @@ export const calculateDrivingDistanceKm = async (
       }
     }
   } catch (err) {
-    console.warn('Falha na API de rota OSRM, utilizando estimativa geodésica urbana:', err);
+    console.warn('Falha ou timeout na API de rotas OSRM, utilizando estimativa geodésica urbana:', err);
   }
 
   // Fallback seguro em caso de indisponibilidade da API de rotas
   const straight = calculateStraightDistanceKm(lat1, lon1, lat2, lon2);
   return {
-    distanceKm: Math.max(0.1, Number((straight * 1.35).toFixed(2))),
+    distanceKm: Math.max(0.1, Number((straight * 1.3).toFixed(2))),
     isRoadRoute: false
   };
 };
 
 /**
- * Busca coordenadas por endereço completo ou CEP, consultando múltiplos provedores.
+ * Calcula a taxa de entrega garantindo arredondamento limpo em reais.
+ */
+export const calculateDeliveryFee = (
+  distanceKm: number | null | undefined,
+  settings: {
+    deliveryBaseFee?: number;
+    deliveryFeePerKm?: number;
+  }
+): number => {
+  if (distanceKm === null || distanceKm === undefined || distanceKm <= 0) return 0;
+  const baseFee = Number(settings.deliveryBaseFee) || 0;
+  const feePerKm = Number(settings.deliveryFeePerKm) || 0;
+  const total = baseFee + feePerKm * distanceKm;
+  return Number(total.toFixed(2));
+};
+
+/**
+ * Busca coordenadas por endereço completo ou CEP com prioridade para precisão de rua.
  */
 export const fetchCoordinatesByAddress = async (params: {
   cep: string;
@@ -113,11 +139,11 @@ export const fetchCoordinatesByAddress = async (params: {
       const numberStr = number ? `${number}, ` : '';
       const neighborhoodStr = neighborhood ? `${neighborhood}, ` : '';
       const query = encodeURIComponent(`${street}, ${numberStr}${neighborhoodStr}${city} - ${state || 'SP'}, Brasil`);
-      
+
       const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
-        headers: { 'Accept-Language': 'pt-BR' }
+        headers: NOMINATIM_HEADERS
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0 && data[0].lat && data[0].lon) {
@@ -132,33 +158,43 @@ export const fetchCoordinatesByAddress = async (params: {
     }
   }
 
-  // 2. Fallback para busca por CEP
+  // 2. Fallback para busca precisa por CEP
   return fetchCoordinatesByCep(cep);
 };
 
 /**
- * Busca coordenadas geográficas pelo CEP (BrasilAPI v2 -> Nominatim -> ViaCEP).
+ * Busca coordenadas geográficas precisas pelo CEP:
+ * 1. AwesomeAPI (coordenadas reais específicas por logradouro)
+ * 2. OpenStreetMap Nominatim (postalcode com User-Agent)
+ * 3. BrasilAPI v2
+ * 4. ViaCEP + Nominatim
  */
 export const fetchCoordinatesByCep = async (cep: string): Promise<{ lat: number; lon: number } | null> => {
   const cleanCep = cep.replace(/\D/g, '');
   if (cleanCep.length !== 8) return null;
 
+  // 1. Provedor Primário: AwesomeAPI CEP (muito preciso para ruas do Brasil)
   try {
-    // 1. Provedor principal: BrasilAPI v2
-    const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.location?.coordinates?.latitude && data.location?.coordinates?.longitude) {
-        return {
-          lat: parseFloat(data.location.coordinates.latitude),
-          lon: parseFloat(data.location.coordinates.longitude)
-        };
+    const resAwesome = await fetch(`https://cep.awesomeapi.com.br/json/${cleanCep}`);
+    if (resAwesome.ok) {
+      const dataAwesome = await resAwesome.json();
+      if (dataAwesome.lat && dataAwesome.lng) {
+        const lat = parseFloat(dataAwesome.lat);
+        const lon = parseFloat(dataAwesome.lng);
+        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+          return { lat, lon };
+        }
       }
     }
+  } catch (e) {
+    console.warn('AwesomeAPI falhou para o CEP, tentando provedores secundários:', e);
+  }
 
-    // 2. Fallback OpenStreetMap Nominatim pelo código postal
+  // 2. Provedor Secundário: OpenStreetMap Nominatim por código postal
+  try {
     const resNominatim = await fetch(
-      `https://nominatim.openstreetmap.org/search?postalcode=${cleanCep}&country=Brazil&format=json&limit=1`
+      `https://nominatim.openstreetmap.org/search?postalcode=${cleanCep}&country=Brazil&format=json&limit=1`,
+      { headers: NOMINATIM_HEADERS }
     );
     if (resNominatim.ok) {
       const dataNominatim = await resNominatim.json();
@@ -169,15 +205,38 @@ export const fetchCoordinatesByCep = async (cep: string): Promise<{ lat: number;
         };
       }
     }
+  } catch (e) {
+    console.warn('Nominatim postalcode falhou:', e);
+  }
 
-    // 3. Fallback ViaCEP + Nominatim por nome do logradouro
+  // 3. Provedor Terciário: BrasilAPI v2
+  try {
+    const resBrasilApi = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`);
+    if (resBrasilApi.ok) {
+      const data = await resBrasilApi.json();
+      if (data.location?.coordinates?.latitude && data.location?.coordinates?.longitude) {
+        return {
+          lat: parseFloat(data.location.coordinates.latitude),
+          lon: parseFloat(data.location.coordinates.longitude)
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('BrasilAPI v2 falhou:', e);
+  }
+
+  // 4. Fallback Final: ViaCEP + Nominatim
+  try {
     const viaCepRes = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
     if (viaCepRes.ok) {
       const viaCepData = await viaCepRes.json();
       if (!viaCepData.erro && viaCepData.localidade) {
         const logradouroStr = viaCepData.logradouro ? `${viaCepData.logradouro}, ` : '';
         const q = encodeURIComponent(`${logradouroStr}${viaCepData.localidade} - ${viaCepData.uf || 'SP'}, Brasil`);
-        const resAddress = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+        const resAddress = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+          { headers: NOMINATIM_HEADERS }
+        );
         if (resAddress.ok) {
           const dataAddress = await resAddress.json();
           if (dataAddress && dataAddress.length > 0 && dataAddress[0].lat && dataAddress[0].lon) {

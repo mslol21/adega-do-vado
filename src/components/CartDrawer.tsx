@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useData } from '../context/DataContext';
 import { useStore } from '../context/StoreContext';
 import { useOrders } from '../context/OrderContext';
-import { fetchCoordinatesByCep as fetchLatLon, fetchCoordinatesByAddress, calculateDrivingDistanceKm } from '../utils/distance';
+import { fetchCoordinatesByCep as fetchLatLon, fetchCoordinatesByAddress, calculateDrivingDistanceKm, calculateDeliveryFee } from '../utils/distance';
 import { getItemUnitPrice } from '../utils/price';
 
 interface CartDrawerProps {
@@ -213,7 +213,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
     let deliveryFee = 0;
     if (formData.deliveryMethod === 'delivery' && deliveryDistanceKm !== null) {
-      deliveryFee = (settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm;
+      deliveryFee = calculateDeliveryFee(deliveryDistanceKm, settings);
     }
     const finalTotal = totalPrice + deliveryFee;
 
@@ -685,7 +685,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               )}
                             </div>
                             <span className="text-sm font-bold text-white">
-                              Taxa: {((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              Taxa: {calculateDeliveryFee(deliveryDistanceKm, settings).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </span>
                           </div>
                           {deliveryRouteInfo?.durationMinutes && (
@@ -768,7 +768,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       {step === 'cart' ? 'Total do Pedido' : (formData.deliveryMethod === 'delivery' ? 'Total com Entrega' : 'Total (Retirada)')}
                     </span>
                     <span className="text-3xl font-black tabular-nums" style={{ color: theme.accent }}>
-                      {(totalPrice + (step === 'checkout' && formData.deliveryMethod === 'delivery' && deliveryDistanceKm !== null ? ((settings.deliveryBaseFee || 0) + (settings.deliveryFeePerKm || 0) * deliveryDistanceKm) : 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {(totalPrice + (step === 'checkout' && formData.deliveryMethod === 'delivery' ? calculateDeliveryFee(deliveryDistanceKm, settings) : 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                 </div>

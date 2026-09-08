@@ -9,6 +9,7 @@ interface OrderContextType {
   loading: boolean;
   createOrder: (order: Partial<Order>) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus, notes?: string) => Promise<void>;
+  updateOrder: (orderId: string, orderData: Partial<Order>) => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -419,8 +420,89 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     }
   };
 
+  const updateOrder = async (orderId: string, orderData: Partial<Order>) => {
+    const now = new Date().toISOString();
+
+    // 1. Atualiza no estado React e localStorage imediatamente para resposta instantânea
+    setOrders(prev => {
+      const updated = prev.map(o => {
+        if (o.id === orderId) {
+          const merged: Order = {
+            ...o,
+            ...orderData,
+            updated_at: now,
+            items: orderData.items ? orderData.items.map((item, idx) => ({
+              ...item,
+              id: item.id || `item_${idx}_${Math.random().toString(36).substr(2, 5)}`,
+              order_id: orderId
+            })) : o.items
+          };
+          return merged;
+        }
+        return o;
+      });
+      saveToLocalStorage(updated);
+      return updated;
+    });
+
+    if (isOfflineMode) {
+      return;
+    }
+
+    try {
+      if (!orderId.startsWith('ord_')) {
+        const { items, ...rawOrderInfo } = orderData;
+        const updateData: any = {
+          ...rawOrderInfo,
+          updated_at: now
+        };
+        delete updateData.id;
+        delete updateData.items;
+
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update(updateData)
+          .eq('id', orderId);
+
+        if (updateError) {
+          console.error('Erro ao atualizar dados do pedido no Supabase:', updateError);
+        }
+
+        // Se foram passados itens novos ou editados, sincroniza order_items
+        if (items) {
+          try {
+            await supabase
+              .from('order_items')
+              .delete()
+              .eq('order_id', orderId);
+
+            if (items.length > 0) {
+              const orderItems = items.map(item => ({
+                order_id: orderId,
+                product_id: item.product_id || null,
+                product_name: item.product_name,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.total_price,
+                notes: item.notes || null
+              }));
+
+              await supabase
+                .from('order_items')
+                .insert(orderItems);
+            }
+          } catch (itemErr) {
+            console.warn('Aviso ao sincronizar itens do pedido no Supabase:', itemErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao sincronizar atualização no Supabase (mantendo alteração local):', err);
+    }
+  };
+
   return (
-    <OrderContext.Provider value={{ orders, loading, createOrder, updateOrderStatus }}>
+    <OrderContext.Provider value={{ orders, loading, createOrder, updateOrderStatus, updateOrder }}>
       {children}
     </OrderContext.Provider>
   );

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Clock, User, MessageSquare, Printer, Ban } from 'lucide-react';
+import { Clock, User, MessageSquare, Printer, Ban, Edit3 } from 'lucide-react';
 import type { Order } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { printReceipt } from '../../utils/printReceipt';
 import { CancelOrderModal } from './CancelOrderModal';
+import { EditOrderModal } from './EditOrderModal';
 
 interface OrderCardProps {
   order: Order;
@@ -17,6 +18,7 @@ interface OrderCardProps {
 export const OrderCard: React.FC<OrderCardProps> = ({ order, variant = 'full', onClick, actionButton }) => {
   const isCompact = variant === 'compact';
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   const timeElapsed = formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR });
 
@@ -106,9 +108,22 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, variant = 'full', o
               </div>
             </div>
 
-            {/* Row 3: Action Buttons (Imprimir / Cancelar) */}
+            {/* Row 3: Action Buttons (Editar / Imprimir / Cancelar) */}
             <div className="flex items-center justify-between gap-2 pt-0.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {order.status !== 'CANCELADO' && order.status !== 'CONCLUIDO' && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEditModal(true);
+                    }}
+                    title="Editar Pedido / Alterar Preços dos Produtos"
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-300 hover:text-black font-bold text-[11px] flex items-center gap-1.5 border border-amber-500/30 transition-all shadow-sm active:scale-95"
+                  >
+                    <Edit3 size={13} />
+                    <span>Editar</span>
+                  </button>
+                )}
                 <button 
                   onClick={handlePrint}
                   title="Imprimir Comprovante de Retirada (80mm)"
@@ -173,6 +188,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, variant = 'full', o
         <CancelOrderModal 
           order={order} 
           onClose={() => setShowCancelModal(false)} 
+        />
+      )}
+
+      {showEditModal && (
+        <EditOrderModal 
+          order={order} 
+          onClose={() => setShowEditModal(false)} 
         />
       )}
     </>

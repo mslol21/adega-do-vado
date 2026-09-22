@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check, Search, Plus, Minus, Sparkles } from 'lucide-react';
 import type { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -21,6 +22,8 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
 }) => {
   const { addToCart, cart } = useCart();
   const { theme } = useStore();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   const flavorOptions = useMemo(() => {
     return product ? getProductFlavors(product) : [];
@@ -42,17 +45,29 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
   // Bloqueia scroll do body enquanto o modal estiver aberto
   useEffect(() => {
     if (isOpen) {
+      const previousOverflow = document.body.style.overflow;
+      const previousFocus = document.activeElement as HTMLElement | null;
       document.body.style.overflow = 'hidden';
+      dialogRef.current?.focus();
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') onClose();
+        if (e.key === 'Tab') {
+          const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, [tabindex="0"]') || []);
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+            e.preventDefault(); last?.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault(); first?.focus();
+          }
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.body.style.overflow = 'unset';
+        document.body.style.overflow = previousOverflow;
+        previousFocus?.focus({ preventScroll: true });
         window.removeEventListener('keydown', handleKeyDown);
       };
-    } else {
-      document.body.style.overflow = 'unset';
     }
   }, [isOpen, onClose]);
 
@@ -75,8 +90,8 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] isolate flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={e => e.stopPropagation()}>
       {/* Backdrop com blur */}
       <div 
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300"
@@ -85,7 +100,8 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
 
       {/* Container do Modal */}
       <div 
-        className="relative w-full max-w-lg bg-[#0F1722] border sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10 animate-slide-up"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className="relative w-full max-w-lg bg-[#0F1722] border sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden z-10 outline-none"
         style={{ borderColor: `${theme.accent}30`, backgroundColor: theme.bgSecondary }}
       >
         {/* Barra superior Mobile Pull Indicator */}
@@ -94,8 +110,8 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
         </div>
 
         {/* Header com Informações do Produto */}
-        <div className="p-4 sm:p-6 border-b flex items-start justify-between gap-4" style={{ borderColor: `${theme.accent}15` }}>
-          <div className="flex gap-4 items-center">
+        <div className="shrink-0 p-4 sm:p-6 border-b flex items-start justify-between gap-4" style={{ borderColor: `${theme.accent}15` }}>
+          <div className="flex min-w-0 gap-4 items-center">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex-shrink-0 border bg-black/40 shadow-inner"
                  style={{ borderColor: `${theme.accent}20` }}>
               <img 
@@ -113,12 +129,12 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
                   {product.subcategory}
                 </span>
               )}
-              <h3 className="font-serif font-bold text-base sm:text-lg leading-tight text-white line-clamp-2">
+              <h3 id={titleId} className="font-serif font-bold text-base sm:text-lg leading-tight text-white line-clamp-2">
                 {product.name}
               </h3>
               
               {/* Preço Unitário */}
-              <div className="flex items-baseline gap-2 mt-1.5">
+              <div className="flex flex-wrap items-baseline gap-2 mt-1.5">
                 {hasDiscount && (
                   <span className="text-xs line-through opacity-50 font-bold" style={{ color: theme.textMuted }}>
                     {Number(product.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -137,6 +153,7 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
           </div>
 
           <button
+            aria-label="Fechar seleção de sabores"
             onClick={onClose}
             className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all flex-shrink-0"
           >
@@ -145,7 +162,7 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
         </div>
 
         {/* Corpo do Modal - Lista de Sabores */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4" style={{ scrollbarWidth: 'thin' }}>
+        <div className="min-h-0 overscroll-contain p-4 sm:p-6 overflow-y-auto flex-1 space-y-4" style={{ scrollbarWidth: 'thin' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Sparkles size={16} style={{ color: theme.accent }} />
@@ -232,8 +249,8 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
         </div>
 
         {/* Footer com Quantidade e CTA */}
-        <div className="p-4 sm:p-6 border-t bg-black/40 flex flex-col sm:flex-row items-center justify-between gap-4"
-             style={{ borderColor: `${theme.accent}15` }}>
+        <div className="shrink-0 p-4 sm:p-6 border-t bg-black/40 flex flex-col sm:flex-row items-center justify-between gap-4"
+             style={{ borderColor: `${theme.accent}15`, paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {/* Seletor de Quantidade */}
           <div className="flex items-center justify-between w-full sm:w-auto gap-4">
             <span className="text-xs font-bold text-white/70 sm:hidden">Quantidade:</span>
@@ -283,6 +300,6 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>, document.body
   );
 };

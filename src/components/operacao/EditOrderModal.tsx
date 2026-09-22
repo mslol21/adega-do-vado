@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useOrders } from '../../context/OrderContext';
 import { useData } from '../../context/DataContext';
-import type { Order, OrderItem, Product, OrderStatus } from '../../types';
+import type { Order, OrderItem, OrderStatus } from '../../types';
 import { getProductFlavors } from '../../utils/flavors';
 import { 
   X, Plus, Minus, Trash2, Edit3, DollarSign, 
   Package, User, Phone, MessageSquare, Check, 
-  Sparkles, Save, ArrowRight, ShieldAlert 
+  Sparkles, Save, ArrowRight 
 } from 'lucide-react';
 
 interface EditOrderModalProps {

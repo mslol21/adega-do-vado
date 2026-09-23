@@ -32,10 +32,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   const fetchData = useCallback(() => {
     if (isOfflineMode) return Promise.resolve();
     return Promise.all([
-      catalogPages((from, to) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }).order('id').range(from, to)),
-      catalogQuery(() => supabase.from('settings').select('*').eq('store_id', storeConfig.id).maybeSingle()),
-      catalogQuery(() => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name')),
-      catalogQuery(() => supabase.from('global_options').select('*').order('name')),
+      catalogPages((from, to, signal) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }).order('id').range(from, to).abortSignal(signal)),
+      catalogQuery(signal => supabase.from('settings').select('*').eq('store_id', storeConfig.id).abortSignal(signal).maybeSingle()),
+      catalogQuery(signal => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name').abortSignal(signal)),
+      catalogQuery(signal => supabase.from('global_options').select('*').order('name').abortSignal(signal)),
     ]).then(([
       { data: productsData, error: productsError },
       { data: settingsData, error: settingsError },

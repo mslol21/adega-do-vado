@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
 import { supabase, isOfflineMode } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
+import { catalogQuery, catalogPages } from '../utils/catalogQuery';
 
 interface DataProviderProps {
   children: React.ReactNode;
@@ -26,26 +27,31 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   });
   const [loading, setLoading] = useState(!isOfflineMode);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [productsLoaded, setProductsLoaded] = useState(isOfflineMode);
 
   const fetchData = useCallback(() => {
     if (isOfflineMode) return Promise.resolve();
     return Promise.all([
-      supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }),
-      supabase.from('settings').select('*').eq('store_id', storeConfig.id).single(),
-      supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name'),
-      supabase.from('global_options').select('*').order('name'),
+      catalogPages((from, to) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }).order('id').range(from, to)),
+      catalogQuery(() => supabase.from('settings').select('*').eq('store_id', storeConfig.id).maybeSingle()),
+      catalogQuery(() => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name')),
+      catalogQuery(() => supabase.from('global_options').select('*').order('name')),
     ]).then(([
       { data: productsData, error: productsError },
       { data: settingsData, error: settingsError },
       { data: catData, error: categoriesError },
       { data: optData, error: optionsError },
     ]) => {
-      if (productsError) throw productsError;
-      if (categoriesError) throw categoriesError;
-      if (optionsError) throw optionsError;
-      if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
-      setLoadError(null);
+      const failures = [
+        ['produtos', productsError], ['categorias', categoriesError],
+        ['configurações', settingsError], ['opções', optionsError],
+      ].filter(([, error]) => error);
+      failures.forEach(([resource, error]) => console.error(`Erro ao carregar ${resource}:`, error));
+      setLoadError(failures.length
+        ? `Não foi possível atualizar: ${failures.map(([name]) => name).join(', ')}. Os dados anteriores, quando disponíveis, foram mantidos. Tente novamente.`
+        : null);
 
+      if (!productsError) {
       if (productsData && productsData.length > 0) {
         const mappedProducts = productsData.map(p => ({
           ...p,
@@ -67,20 +73,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       } else {
         setProducts([]);
       }
+      setProductsLoaded(true);
+      }
 
-      if (settingsData) setSettings(settingsData);
+      if (!settingsError && settingsData) setSettings(settingsData);
 
+      if (!categoriesError) {
       if (catData && catData.length > 0) {
         setCategories(catData);
       } else {
         setCategories([]);
       }
+      }
 
+      if (!optionsError) {
       const mappedOptions = (optData || []).map(o => ({
         ...o,
         categoryIds: o.category_ids || []
       }));
       setGlobalOptions(mappedOptions);
+      }
 
     }).catch(error => {
       console.error('Error fetching data:', error);
@@ -366,7 +378,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       {loadError && <div role="alert" className="bg-red-950 text-white p-4">
         {loadError} <button type="button" onClick={() => void fetchData()} className="underline">Tentar novamente</button>
       </div>}
-      {children}
+      {!loading && !productsLoaded ? (
+        <div role="status" className="p-8 text-center text-white">
+          Catálogo indisponível no momento. Não foi possível consultar os produtos cadastrados.
+        </div>
+      ) : children}
     </DataContext.Provider>
   );
 };

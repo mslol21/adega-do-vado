@@ -87,7 +87,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
               >
                 {allImages.map((img, i) => (
                   <div key={i} className="w-full h-full flex-shrink-0 snap-center relative">
-                    <img src={img} alt={`${product.name} - ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} loading="lazy" decoding="async" alt={`${product.name} - ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -111,6 +111,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
           ) : (
             <img
               src={product.image}
+              loading="lazy"
+              decoding="async"
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
@@ -235,7 +237,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
       </div>
 
       {/* Modal de Seleção de Sabor */}
-      {flavorOptions.length > 0 && (
+      {isFlavorModalOpen && flavorOptions.length > 0 && (
         <ProductFlavorModal
           product={product}
           isOpen={isFlavorModalOpen}

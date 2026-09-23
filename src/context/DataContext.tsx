@@ -61,11 +61,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
         return;
       }
 
-      const { data: productsData } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', storeConfig.id)
-        .order('created_at', { ascending: false });
+      // Independent reads avoid four sequential network round trips.
+      const [
+        { data: productsData },
+        { data: settingsData },
+        { data: catData },
+        { data: optData },
+      ] = await Promise.all([
+        supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }),
+        supabase.from('settings').select('*').eq('store_id', storeConfig.id).single(),
+        supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name'),
+        supabase.from('global_options').select('*').order('name'),
+      ]);
 
       if (productsData && productsData.length > 0) {
         const mappedProducts = productsData.map(p => ({
@@ -89,19 +96,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
         setProducts(storeConfig.products);
       }
 
-      const { data: settingsData } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('store_id', storeConfig.id)
-        .single();
-
       if (settingsData) setSettings(settingsData);
-
-      const { data: catData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('store_id', storeConfig.id)
-        .order('name');
 
       if (catData && catData.length > 0) {
         setCategories(catData);
@@ -109,7 +104,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
         setCategories(storeConfig.categories);
       }
 
-      const { data: optData } = await supabase.from('global_options').select('*').order('name');
       const mappedOptions = (optData || []).map(o => ({
         ...o,
         categoryIds: o.category_ids || []

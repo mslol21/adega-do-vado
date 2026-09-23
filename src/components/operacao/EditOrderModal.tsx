@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useOrders } from '../../context/OrderContext';
-import { useData } from '../../context/DataContext';
+import { useOrders } from '../../context/useOrders';
+import { useData } from '../../context/useData';
 import type { Order, OrderItem, OrderStatus } from '../../types';
 import { getProductFlavors } from '../../utils/flavors';
 import { 
   X, Plus, Minus, Trash2, Edit3, DollarSign, 
   Package, User, Phone, MessageSquare, Check, 
-  Sparkles, Save, ArrowRight 
+  Sparkles, Save, ArrowRight
 } from 'lucide-react';
 
 interface EditOrderModalProps {
@@ -15,7 +15,7 @@ interface EditOrderModalProps {
 }
 
 export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose }) => {
-  const { updateOrder, updateOrderStatus } = useOrders();
+  const { updateOrder } = useOrders();
   const { products } = useData();
 
   // Estado dos itens do pedido editável
@@ -32,6 +32,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose }
   const [customerName, setCustomerName] = useState(order.customer_name || '');
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone || '');
   const [paymentMethod, setPaymentMethod] = useState(order.payment_method || 'pix');
+  const [changeFor, setChangeFor] = useState(order.change_for?.toString() ?? '');
   const [deliveryFee, setDeliveryFee] = useState<number>(Number(order.delivery_fee) || 0);
   const [discount, setDiscount] = useState<number>(Number(order.discount) || 0);
   const [notes, setNotes] = useState(order.notes || '');
@@ -153,6 +154,7 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose }
         customer_name: customerName.trim() || 'Cliente Balcão',
         customer_phone: customerPhone.trim(),
         payment_method: paymentMethod,
+        change_for: paymentMethod === 'cash' && changeFor.trim() ? Number(changeFor.replace(',', '.')) : null,
         subtotal: Number(subtotal.toFixed(2)),
         delivery_fee: Number(deliveryFee.toFixed(2)),
         discount: Number(discount.toFixed(2)),
@@ -161,11 +163,10 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose }
         items: items
       };
 
-      await updateOrder(order.id, updatedPayload);
-
       if (andAdvanceStatus && nextStatus) {
-        await updateOrderStatus(order.id, nextStatus);
+        updatedPayload.status = nextStatus;
       }
+      await updateOrder(order.id, updatedPayload);
 
       setSuccessMsg('Pedido atualizado com sucesso!');
       setTimeout(() => {
@@ -256,6 +257,13 @@ export const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose }
                 <option value="card">Cartão</option>
                 <option value="cash">Dinheiro</option>
               </select>
+              {paymentMethod === 'cash' && <label className="block text-xs text-white mt-3">
+                Troco para (R$)
+                <input type="number" min="0" step="0.01" value={changeFor}
+                  onChange={event => setChangeFor(event.target.value)}
+                  placeholder="Sem troco"
+                  className="w-full bg-[#180F18] border border-[#C9963C]/20 rounded-xl px-3 py-2 mt-1" />
+              </label>}
             </div>
           </div>
 

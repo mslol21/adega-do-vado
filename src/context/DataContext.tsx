@@ -1,29 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { DataContext } from './useData';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
 import { supabase, isOfflineMode } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
-
-interface DataContextType {
-  products: Product[];
-  categories: Category[];
-  globalOptions: GlobalOption[];
-  settings: ShopSettings;
-  loading: boolean;
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
-  updateProduct: (product: Product) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
-  updateSettings: (settings: ShopSettings) => Promise<void>;
-  uploadFile: (file: File) => Promise<string>;
-  addCategory: (category: Partial<Category>) => Promise<void>;
-  updateCategory: (category: Category) => Promise<void>;
-  deleteCategory: (id: string) => Promise<void>;
-  addGlobalOption: (option: Partial<GlobalOption>) => Promise<void>;
-  updateGlobalOption: (option: GlobalOption) => Promise<void>;
-  deleteGlobalOption: (id: string) => Promise<void>;
-  adjustStock: (items: { product_id?: string; quantity: number }[], multiplier?: number) => Promise<void>;
-}
-
-const DataContext = createContext<DataContextType | undefined>(undefined);
 
 interface DataProviderProps {
   children: React.ReactNode;
@@ -31,8 +10,8 @@ interface DataProviderProps {
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfig }) => {
-  const [products, setProducts] = useState<Product[]>(storeConfig.products);
-  const [categories, setCategories] = useState<Category[]>(storeConfig.categories);
+  const [products, setProducts] = useState<Product[]>(isOfflineMode ? storeConfig.products : []);
+  const [categories, setCategories] = useState<Category[]>(isOfflineMode ? storeConfig.categories : []);
   const [globalOptions, setGlobalOptions] = useState<GlobalOption[]>([]);
   const [settings, setSettings] = useState<ShopSettings>({
     name: storeConfig.name,
@@ -41,38 +20,31 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     instagram: storeConfig.instagram,
     tiktok: storeConfig.tiktok,
     slogan: storeConfig.slogan,
+    storeCep: storeConfig.storeCep,
+    deliveryFeePerKm: storeConfig.deliveryFeePerKm,
+    deliveryBaseFee: storeConfig.deliveryBaseFee,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isOfflineMode);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeConfig.id]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // Se estiver rodando sem as chaves (.env), usa os dados locais instantaneamente para não travar no loading
-      if (isOfflineMode) {
-        setProducts(storeConfig.products);
-        setCategories(storeConfig.categories);
-        setLoading(false);
-        return;
-      }
-
-      // Independent reads avoid four sequential network round trips.
-      const [
-        { data: productsData },
-        { data: settingsData },
-        { data: catData },
-        { data: optData },
-      ] = await Promise.all([
-        supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }),
-        supabase.from('settings').select('*').eq('store_id', storeConfig.id).single(),
-        supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name'),
-        supabase.from('global_options').select('*').order('name'),
-      ]);
+  const fetchData = useCallback(() => {
+    if (isOfflineMode) return Promise.resolve();
+    return Promise.all([
+      supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }),
+      supabase.from('settings').select('*').eq('store_id', storeConfig.id).single(),
+      supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name'),
+      supabase.from('global_options').select('*').order('name'),
+    ]).then(([
+      { data: productsData, error: productsError },
+      { data: settingsData, error: settingsError },
+      { data: catData, error: categoriesError },
+      { data: optData, error: optionsError },
+    ]) => {
+      if (productsError) throw productsError;
+      if (categoriesError) throw categoriesError;
+      if (optionsError) throw optionsError;
+      if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
+      setLoadError(null);
 
       if (productsData && productsData.length > 0) {
         const mappedProducts = productsData.map(p => ({
@@ -93,7 +65,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
         }));
         setProducts(mappedProducts);
       } else {
-        setProducts(storeConfig.products);
+        setProducts([]);
       }
 
       if (settingsData) setSettings(settingsData);
@@ -101,7 +73,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       if (catData && catData.length > 0) {
         setCategories(catData);
       } else {
-        setCategories(storeConfig.categories);
+        setCategories([]);
       }
 
       const mappedOptions = (optData || []).map(o => ({
@@ -110,14 +82,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       }));
       setGlobalOptions(mappedOptions);
 
-    } catch (error) {
+    }).catch(error => {
       console.error('Error fetching data:', error);
-      // Fallbacks em caso de falha na conexão (como chaves faltando)
-      setCategories(storeConfig.categories);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoadError('Não foi possível atualizar o catálogo. Verifique sua conexão e tente novamente.');
+    }).finally(() => setLoading(false));
+  }, [storeConfig.id]);
+
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     if (isOfflineMode) {
@@ -166,7 +137,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       available_colors: product.flavors ?? null,
       has_name_option: product.hasNameOption ?? false,
       variations: product.variations || [],
-      customization_lists: (product as any).customizationLists || (product as any).customization_lists || [],
+      customization_lists: product.customizationLists || [],
       name_price: product.namePrice ?? null,
       wholesale_price: product.wholesalePrice ?? null,
       wholesale_min_quantity: product.wholesaleMinQuantity ?? null,
@@ -346,8 +317,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       setGlobalOptions([...globalOptions, { ...option, id: Math.random().toString(36).substr(2, 9) } as GlobalOption]);
       return;
     }
-    const dbOption = { ...option, category_ids: option.categoryIds };
-    delete (dbOption as any).categoryIds;
+    const { categoryIds, ...fields } = option;
+    const dbOption = { ...fields, category_ids: categoryIds };
     const { data, error } = await supabase.from('global_options').insert([dbOption]).select();
     if (error) console.error(error);
     if (data) {
@@ -361,8 +332,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       setGlobalOptions(globalOptions.map(o => o.id === option.id ? option : o));
       return;
     }
-    const dbOption = { ...option, category_ids: option.categoryIds };
-    delete (dbOption as any).categoryIds;
+    const { categoryIds, ...fields } = option;
+    const dbOption = { ...fields, category_ids: categoryIds };
     const { error } = await supabase.from('global_options').update(dbOption).eq('id', option.id);
     if (error) console.error(error);
     setGlobalOptions(globalOptions.map(o => o.id === option.id ? option : o));
@@ -378,42 +349,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     setGlobalOptions(globalOptions.filter(o => o.id !== id));
   };
 
-  const adjustStock = async (items: { product_id?: string; quantity: number }[], multiplier: number = -1) => {
+  const applyStockSnapshot = useCallback((stock: { id: string; stock_quantity: number }[]) => {
     setProducts(prev => prev.map(p => {
-      const matched = items.find(i => i.product_id === p.id);
-      if (matched && p.stockQuantity !== undefined) {
-        const newStock = Math.max(0, p.stockQuantity + (matched.quantity * multiplier));
-        return { ...p, stockQuantity: newStock };
-      }
-      return p;
+      const updated = stock.find(item => item.id === p.id);
+      return updated ? { ...p, stockQuantity: updated.stock_quantity } : p;
     }));
-
-    if (!isOfflineMode) {
-      for (const item of items) {
-        if (!item.product_id) continue;
-        const currentProd = products.find(p => p.id === item.product_id);
-        if (currentProd && currentProd.stockQuantity !== undefined) {
-          const newStock = Math.max(0, currentProd.stockQuantity + (item.quantity * multiplier));
-          await supabase.from('products').update({ stock_quantity: newStock }).eq('id', item.product_id);
-        }
-      }
-    }
-  };
+  }, []);
 
   return (
     <DataContext.Provider value={{
       products, settings, loading, categories, globalOptions,
       addProduct, updateProduct, deleteProduct, updateSettings, uploadFile,
       addCategory, updateCategory, deleteCategory,
-      addGlobalOption, updateGlobalOption, deleteGlobalOption, adjustStock
+      addGlobalOption, updateGlobalOption, deleteGlobalOption, applyStockSnapshot
     }}>
+      {loadError && <div role="alert" className="bg-red-950 text-white p-4">
+        {loadError} <button type="button" onClick={() => void fetchData()} className="underline">Tentar novamente</button>
+      </div>}
       {children}
     </DataContext.Provider>
   );
-};
-
-export const useData = () => {
-  const context = useContext(DataContext);
-  if (!context) throw new Error('useData must be used within a DataProvider');
-  return context;
 };

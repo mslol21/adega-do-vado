@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useData } from '../../context/DataContext';
-import { useOrders } from '../../context/OrderContext';
+import React, { useRef, useState } from 'react';
+import type { CartItem, Product } from '../../types';
+import { useData } from '../../context/useData';
+import { useOrders } from '../../context/useOrders';
 import { Search, Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Printer, Sparkles, X, Check } from 'lucide-react';
 import { printReceipt } from '../../utils/printReceipt';
 import { getItemUnitPrice, getItemTotalPrice } from '../../utils/price';
@@ -11,9 +12,11 @@ export const Atendimento: React.FC = () => {
   const { createOrder } = useOrders();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<(CartItem & { originalProductId: string; itemDiscount?: number })[]>([]);
+  const checkoutLock = useRef(false);
+  const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<'products' | 'cart'>('products');
-  const [flavorModalProduct, setFlavorModalProduct] = useState<any | null>(null);
+  const [flavorModalProduct, setFlavorModalProduct] = useState<Product | null>(null);
   const [selectedFlavorInModal, setSelectedFlavorInModal] = useState<string>('');
 
   const filteredProducts = products.filter(p => {
@@ -28,7 +31,7 @@ export const Atendimento: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleProductClick = (p: any) => {
+  const handleProductClick = (p: Product) => {
     const flavors = getProductFlavors(p);
     if (flavors.length > 0) {
       setSelectedFlavorInModal(flavors[0]);
@@ -58,7 +61,7 @@ export const Atendimento: React.FC = () => {
     }
   };
 
-  const addToCart = (product: any, flavor?: string) => {
+  const addToCart = (product: Product, flavor?: string) => {
     const itemKey = flavor ? `${product.id}-${flavor}` : product.id;
     setCart(prev => {
       const existing = prev.find(i => (i.id === itemKey));
@@ -94,7 +97,7 @@ export const Atendimento: React.FC = () => {
 
   const totalItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
   const subtotal = cart.reduce((acc, i) => acc + getItemTotalPrice(i, cart), 0);
-  const totalDiscount = cart.reduce((acc, i) => acc + Math.max(0, i.itemDiscount || 0), 0);
+  const totalDiscount = cart.reduce((acc, i) => acc + Math.min(getItemTotalPrice(i, cart), Math.max(0, i.itemDiscount || 0)), 0);
   const finalTotal = Math.max(0, subtotal - totalDiscount);
 
   const [customerName, setCustomerName] = useState('');
@@ -102,7 +105,10 @@ export const Atendimento: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'cash'>('pix');
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || checkoutLock.current) return;
+    checkoutLock.current = true;
+    setSaving(true);
+    try {
     
     const created = await createOrder({
       source: 'INTERNO',
@@ -119,8 +125,7 @@ export const Atendimento: React.FC = () => {
         const baseUnit = getItemUnitPrice(item, undefined, cart);
         const grossTotal = getItemTotalPrice(item, cart);
         const itemDiscount = Math.min(grossTotal, Math.max(0, item.itemDiscount || 0));
-        const netTotal = grossTotal - itemDiscount;
-        const unitPrice = item.quantity > 0 ? netTotal / item.quantity : baseUnit;
+        const unitPrice = baseUnit;
         const flavorText = item.selectedFlavor ? ` (${item.selectedFlavor})` : '';
         const descText = itemDiscount > 0 ? ` (Desc: R$ ${itemDiscount.toFixed(2)})` : '';
         return {
@@ -128,9 +133,9 @@ export const Atendimento: React.FC = () => {
           product_name: item.name + flavorText + descText,
           quantity: item.quantity,
           unit_price: unitPrice,
-          total_price: netTotal
+          total_price: grossTotal
         };
-      }) as any
+      })
     });
     
     if (created) {
@@ -141,6 +146,12 @@ export const Atendimento: React.FC = () => {
     setCustomerName('');
     setCustomerPhone('');
     setMobileTab('products');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Não foi possível salvar o pedido. O carrinho foi mantido.');
+    } finally {
+      checkoutLock.current = false;
+      setSaving(false);
+    }
   };
 
   return (
@@ -403,7 +414,7 @@ export const Atendimento: React.FC = () => {
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => setPaymentMethod(m.id as any)}
+                    onClick={() => setPaymentMethod(m.id as 'pix' | 'card' | 'cash')}
                     className={`py-1.5 rounded-lg border text-center transition-all ${
                       paymentMethod === m.id
                         ? 'bg-[#C9963C]/20 border-[#C9963C] text-[#C9963C]'
@@ -441,7 +452,7 @@ export const Atendimento: React.FC = () => {
 
           <button 
             onClick={handleCheckout}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || saving}
             className="w-full bg-[#C9963C] text-black font-extrabold text-sm sm:text-base py-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#b08030] transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2"
           >
             <Printer size={18} />

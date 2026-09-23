@@ -44,7 +44,7 @@ export type Product = {
   namePrice?: number;
   variations?: Variation[];
   customizationLists?: CustomizationList[];
-  selectedVariation?: any;
+  selectedVariation?: Variation;
   selectedFlavor?: string;
   wholesalePrice?: number;
   wholesaleMinQuantity?: number;
@@ -55,7 +55,7 @@ export type Product = {
 
 export type CartItem = Product & {
   quantity: number;
-  selectedVariation?: any;
+  selectedVariation?: Variation;
   selectedFlavor?: string;
 }
 
@@ -138,7 +138,7 @@ export type OrderItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
-  options?: any;
+  options?: Record<string, unknown>;
   notes?: string;
   status?: string;
   created_at?: string;
@@ -168,7 +168,7 @@ export type Order = {
   payment_method?: 'pix' | 'card' | 'cash' | string;
   payment_status?: string;
   amount_received?: number;
-  change_for?: number;
+  change_for?: number | null;
   
   subtotal: number;
   delivery_fee: number;
@@ -211,6 +211,10 @@ export type OrderStatusHistory = {
   changed_at: string;
   notes?: string;
 }
+
+export type OrderInput = Omit<Partial<Order>, 'items'> & {
+  items?: Omit<OrderItem, 'id' | 'order_id'>[];
+};
 
 // Dummy export to ensure this is treated as a module with values if needed
 export const TYPES_VERSION = "1.1.0";

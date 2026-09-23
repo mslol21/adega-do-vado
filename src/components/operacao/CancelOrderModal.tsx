@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import type { Order } from '../../types';
 import { ShieldAlert, X, Lock, CheckCircle2 } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({ order, onClo
     // Busca a senha customizada de admin para esta loja no localStorage, ou usa as senhas padrao
     const customAdminPin = localStorage.getItem(`op_pin_ADMIN_${order.store_id}`) || localStorage.getItem('op_pin_ADMIN');
     
-    let isValid = false;
+    let isValid: boolean;
     if (customAdminPin) {
       isValid = adminPassword.trim() === customAdminPin.trim();
     } else {
@@ -44,7 +44,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({ order, onClo
       setLoading(true);
       await updateOrderStatus(order.id, 'CANCELADO', reason.trim() || 'Cancelado pelo Administrador');
       onClose();
-    } catch (err) {
+    } catch {
       setError('Erro ao cancelar o pedido. Tente novamente.');
     } finally {
       setLoading(false);

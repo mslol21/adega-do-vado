@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import { OrderCard } from '../../components/operacao/OrderCard';
 import { MapPin } from 'lucide-react';
 
@@ -45,7 +45,7 @@ export const Entregas: React.FC = () => {
                 </div>
                 
                 <button 
-                  onClick={() => updateOrderStatus(order.id, 'CONCLUIDO')}
+                  onClick={() => { void updateOrderStatus(order.id, 'CONCLUIDO').catch(() => undefined); }}
                   className="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-emerald-400/30 flex items-center justify-center gap-2"
                 >
                   <span>Confirmar Entrega</span>

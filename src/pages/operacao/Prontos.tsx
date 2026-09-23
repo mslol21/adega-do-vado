@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import { OrderCard } from '../../components/operacao/OrderCard';
 
 export const Prontos: React.FC = () => {
@@ -21,7 +21,7 @@ export const Prontos: React.FC = () => {
               actionButton={
                 order.order_type === 'DELIVERY' ? (
                   <button 
-                    onClick={() => updateOrderStatus(order.id, 'EM_ENTREGA')}
+                    onClick={() => { void updateOrderStatus(order.id, 'EM_ENTREGA').catch(() => undefined); }}
                     className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-purple-400/30 flex items-center justify-center gap-2"
                   >
                     <span>Enviar para Entrega</span>
@@ -29,7 +29,7 @@ export const Prontos: React.FC = () => {
                   </button>
                 ) : (
                   <button 
-                    onClick={() => updateOrderStatus(order.id, 'CONCLUIDO')}
+                    onClick={() => { void updateOrderStatus(order.id, 'CONCLUIDO').catch(() => undefined); }}
                     className="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-emerald-400/30 flex items-center justify-center gap-2"
                   >
                     <span>Entregar ao Cliente</span>

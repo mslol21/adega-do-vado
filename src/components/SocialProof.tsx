@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore } from '../context/StoreContext';
+import { useStore } from '../context/useStore';
 
 export const SocialProof: React.FC = () => {
   const store = useStore();
@@ -59,4 +59,3 @@ export const SocialProof: React.FC = () => {
     </section>
   );
 };
-

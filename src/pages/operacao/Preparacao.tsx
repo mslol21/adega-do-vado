@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import { OrderCard } from '../../components/operacao/OrderCard';
 
 export const Preparacao: React.FC = () => {
@@ -20,7 +20,7 @@ export const Preparacao: React.FC = () => {
               order={order}
               actionButton={
                 <button 
-                  onClick={() => updateOrderStatus(order.id, 'EM_PREPARACAO')}
+                  onClick={() => { void updateOrderStatus(order.id, 'EM_PREPARACAO').catch(() => undefined); }}
                   className="w-full py-3 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-amber-400/30 flex items-center justify-center gap-2"
                 >
                   <span>Iniciar Preparação</span>
@@ -47,7 +47,7 @@ export const Preparacao: React.FC = () => {
               order={order}
               actionButton={
                 <button 
-                  onClick={() => updateOrderStatus(order.id, 'EM_SEPARACAO')}
+                  onClick={() => { void updateOrderStatus(order.id, 'EM_SEPARACAO').catch(() => undefined); }}
                   className="w-full py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 hover:from-yellow-400 hover:to-amber-400 text-black font-extrabold text-xs sm:text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-yellow-300/40 flex items-center justify-center gap-2"
                 >
                   <span>Concluir Preparação</span>

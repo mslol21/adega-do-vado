@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useData } from '../context/DataContext';
-import { useStore } from '../context/StoreContext';
+import { useData } from '../context/useData';
+import { useStore } from '../context/useStore';
 import type { Product, Category } from '../types';
 import {
   ShoppingBag, Grid, Settings, ArrowLeft, Plus,
@@ -9,6 +9,11 @@ import {
 } from 'lucide-react';
 
 type Tab = 'products' | 'categories' | 'settings' | 'qrcode' | 'passwords';
+type ProductForm = Omit<Partial<Product>, 'price' | 'promotionalPrice' | 'wholesalePrice'> & {
+  price?: number | string;
+  promotionalPrice?: number | string;
+  wholesalePrice?: number | string;
+};
 
 const emptyProduct = (): Partial<Product> => ({
   name: '', description: '', price: 0, image: '', images: [],
@@ -25,7 +30,7 @@ export const AdminPanel: React.FC = () => {
   const [tab, setTab] = useState<Tab>('products');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<Partial<Product>>(emptyProduct());
+  const [form, setForm] = useState<ProductForm>(emptyProduct());
   const [formSettings, setFormSettings] = useState(settings);
   const [newCatName, setNewCatName] = useState('');
   const [newCatImage, setNewCatImage] = useState('');
@@ -61,7 +66,7 @@ export const AdminPanel: React.FC = () => {
   useEffect(() => { setFormSettings(settings); }, [settings]);
   useEffect(() => {
     if (categories.length && !form.category) setForm(f => ({ ...f, category: categories[0].id }));
-  }, [categories]);
+  }, [categories, form.category]);
 
   const accent = theme.accent;
   const bg = theme.bgSecondary;
@@ -94,7 +99,7 @@ export const AdminPanel: React.FC = () => {
     try { 
       const url = await uploadFile(file); 
       onDone(url); 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro no upload de foto:', err);
       alert('Não foi possível processar a imagem. Tente uma imagem menor ou em formato JPG/PNG.');
     } finally { 
@@ -114,8 +119,8 @@ export const AdminPanel: React.FC = () => {
         await addCategory(catForm as Category);
       }
       closeCatForm();
-    } catch (err: any) {
-      const detail = err?.message || String(err);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
       console.error('Erro ao salvar categoria:', err);
       alert(`Erro ao salvar categoria.\n\n${detail}\n\nVerifique o Console (F12) para mais detalhes.`);
     }
@@ -126,7 +131,7 @@ export const AdminPanel: React.FC = () => {
   const submitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const parseVal = (val: any) => {
+      const parseVal = (val: string | number | undefined | null) => {
         if (val === undefined || val === null || val === '') return undefined;
         const parsed = parseFloat(val.toString().replace(',', '.'));
         return isNaN(parsed) ? undefined : parsed;
@@ -135,8 +140,8 @@ export const AdminPanel: React.FC = () => {
       const parsedPrice = parseVal(form.price) || 0;
       const parsedPromo = parseVal(form.promotionalPrice);
       const parsedWholesale = parseVal(form.wholesalePrice);
-      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && (form.wholesaleMinQuantity as any) !== '' ? parseInt(form.wholesaleMinQuantity as any) : undefined;
-      const parsedStock = form.stockQuantity !== undefined && (form.stockQuantity as any) !== '' ? parseInt(form.stockQuantity as any) : 0;
+      const parsedWholesaleMin = form.wholesaleMinQuantity !== undefined && String(form.wholesaleMinQuantity) !== '' ? parseInt(String(form.wholesaleMinQuantity), 10) : undefined;
+      const parsedStock = form.stockQuantity !== undefined && String(form.stockQuantity) !== '' ? parseInt(String(form.stockQuantity), 10) : 0;
 
       let parsedFlavors: string[] | undefined = undefined;
       if (form.flavors) {
@@ -160,8 +165,8 @@ export const AdminPanel: React.FC = () => {
       if (editing) await updateProduct({ ...editing, ...cleanedForm } as Product);
       else await addProduct(cleanedForm as Product);
       closeForm();
-    } catch (err: any) {
-      const detail = err?.message || String(err);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
       console.error('Erro ao salvar produto:', err);
       alert(`Erro ao salvar produto.\n\n${detail}\n\nVerifique o Console (F12) para mais detalhes.`);
     }
@@ -603,8 +608,8 @@ export const AdminPanel: React.FC = () => {
               <form onSubmit={submitProduct} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {field('Nome *', input({ required: true, value: form.name, onChange: e => setForm({ ...form, name: e.target.value }) }))}
-                  {field('Preço (R$) *', input({ type: 'text', inputMode: 'decimal', required: true, value: form.price ?? '', onChange: e => setForm({ ...form, price: e.target.value as any }) }))}
-                  {field('Preço Promocional (R$)', input({ type: 'text', inputMode: 'decimal', value: form.promotionalPrice ?? '', onChange: e => setForm({ ...form, promotionalPrice: e.target.value as any }) }))}
+                  {field('Preço (R$) *', input({ type: 'text', inputMode: 'decimal', required: true, value: form.price ?? '', onChange: e => setForm({ ...form, price: e.target.value }) }))}
+                  {field('Preço Promocional (R$)', input({ type: 'text', inputMode: 'decimal', value: form.promotionalPrice ?? '', onChange: e => setForm({ ...form, promotionalPrice: e.target.value }) }))}
                   <div className="md:col-span-1">
                     {field('Descrição', textarea({ value: form.description, onChange: e => setForm({ ...form, description: e.target.value }) }))}
                   </div>
@@ -615,7 +620,7 @@ export const AdminPanel: React.FC = () => {
                     input({ placeholder: 'Ex: Importados', value: form.subcategory, onChange: e => setForm({ ...form, subcategory: e.target.value }) })
                   )}
                   {field('Preço de Atacado (R$)', 
-                    input({ type: 'text', inputMode: 'decimal', value: form.wholesalePrice ?? '', onChange: e => setForm({ ...form, wholesalePrice: e.target.value as any }) })
+                    input({ type: 'text', inputMode: 'decimal', value: form.wholesalePrice ?? '', onChange: e => setForm({ ...form, wholesalePrice: e.target.value }) })
                   )}
                   {field('Qtd Mínima Atacado', 
                     input({ type: 'number', value: form.wholesaleMinQuantity || '', onChange: e => setForm({ ...form, wholesaleMinQuantity: parseInt(e.target.value) }) })

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useStore } from '../context/StoreContext';
+import { useCart } from '../context/useCart';
+import { useStore } from '../context/useStore';
 
 interface FixedFooterProps {
   onClick: () => void;

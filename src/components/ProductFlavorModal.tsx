@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Check, Search, Plus, Minus, Sparkles } from 'lucide-react';
 import type { Product } from '../types';
-import { useCart } from '../context/CartContext';
-import { useStore } from '../context/StoreContext';
+import { useCart } from '../context/useCart';
+import { useStore } from '../context/useStore';
 import { getProductFlavors } from '../utils/flavors';
 import { getItemUnitPrice } from '../utils/price';
 
@@ -14,7 +14,10 @@ interface ProductFlavorModalProps {
   onConfirm?: (flavor: string, quantity: number) => void;
 }
 
-export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
+export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = (props) =>
+  props.isOpen && props.product ? <ProductFlavorDialog key={props.product.id} {...props} /> : null;
+
+const ProductFlavorDialog: React.FC<ProductFlavorModalProps> = ({
   product,
   isOpen,
   onClose,
@@ -29,18 +32,9 @@ export const ProductFlavorModal: React.FC<ProductFlavorModalProps> = ({
     return product ? getProductFlavors(product) : [];
   }, [product]);
 
-  const [selectedFlavor, setSelectedFlavor] = useState<string>('');
+  const [selectedFlavor, setSelectedFlavor] = useState<string>(() => getProductFlavors(product)[0] ?? '');
   const [quantity, setQuantity] = useState<number>(1);
   const [searchFilter, setSearchFilter] = useState<string>('');
-
-  useEffect(() => {
-    if (isOpen && product) {
-      const flavors = getProductFlavors(product);
-      setSelectedFlavor(flavors.length > 0 ? flavors[0] : '');
-      setQuantity(1);
-      setSearchFilter('');
-    }
-  }, [isOpen, product]);
 
   // Bloqueia scroll do body enquanto o modal estiver aberto
   useEffect(() => {

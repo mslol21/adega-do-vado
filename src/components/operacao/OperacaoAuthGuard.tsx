@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useStore } from '../../context/StoreContext';
+import { useAuth } from '../../context/useAuth';
+import { useStore } from '../../context/useStore';
 import { Lock, UserCheck, ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
 
 interface OperacaoAuthGuardProps {

@@ -5,7 +5,7 @@ import type { Product } from '../types';
  * suportando array de strings, string separada por vírgulas/barras/ponto-e-vírgula
  * ou JSON array stringificado do banco de dados (Supabase/Postgres).
  */
-export const getProductFlavors = (product?: Product | { flavors?: any } | null): string[] => {
+export const getProductFlavors = (product?: Product | { flavors?: unknown } | null): string[] => {
   if (!product || !product.flavors) return [];
 
   const raw = product.flavors;
@@ -39,7 +39,7 @@ export const getProductFlavors = (product?: Product | { flavors?: any } | null):
     // Suporta separação por vírgula, ponto e vírgula, barra ou quebra de linha
     return trimmed
       .split(/[,;|/\n]+/)
-      .map(item => item.replace(/^[\[\]"']+|[\[\]"']+$/g, '').trim())
+      .map(item => item.replace(/^[[\]"']+|[[\]"']+$/g, '').trim())
       .filter(Boolean);
   }
 

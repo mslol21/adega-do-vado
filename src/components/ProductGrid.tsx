@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { ProductCard } from './ProductCard';
-import { useData } from '../context/DataContext';
-import { useStore } from '../context/StoreContext';
+import { useData } from '../context/useData';
+import { useStore } from '../context/useStore';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import type { Product } from '../types';
 

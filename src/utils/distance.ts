@@ -77,7 +77,7 @@ export const calculateDrivingDistanceKm = async (
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
         // Seleciona a rota com a MENOR distância em metros entre as opções
         const shortestRoute = data.routes.reduce(
-          (min: any, r: any) => (r.distance < min.distance ? r : min),
+          (min: { distance: number; duration?: number }, r: { distance: number; duration?: number }) => (r.distance < min.distance ? r : min),
           data.routes[0]
         );
 

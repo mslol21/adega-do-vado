@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Search, X } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useStore } from '../context/StoreContext';
+import { useCart } from '../context/useCart';
+import { useStore } from '../context/useStore';
 
 interface NavbarProps {
   onCartClick: () => void;

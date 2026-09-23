@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import { OrderCard } from '../../components/operacao/OrderCard';
 
 export const Recebimento: React.FC = () => {
@@ -21,7 +21,7 @@ export const Recebimento: React.FC = () => {
               variant="full"
               actionButton={
                 <button 
-                  onClick={() => updateOrderStatus(order.id, 'RECEBIDO')}
+                  onClick={() => { void updateOrderStatus(order.id, 'RECEBIDO').catch(() => undefined); }}
                   className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm tracking-wide rounded-xl transition-all shadow-lg active:scale-95 border border-blue-400/30 flex items-center justify-center gap-2"
                 >
                   <span>Receber Pedido</span>

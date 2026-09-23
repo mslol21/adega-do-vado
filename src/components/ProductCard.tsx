@@ -1,8 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import type { Product } from '../types';
-import { useCart } from '../context/CartContext';
-import { useStore } from '../context/StoreContext';
+import { useCart } from '../context/useCart';
+import { useStore } from '../context/useStore';
 import { getProductFlavors } from '../utils/flavors';
 import { ProductFlavorModal } from './ProductFlavorModal';
 

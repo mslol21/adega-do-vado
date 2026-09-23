@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Trash2, Minus, Plus, MessageCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useData } from '../context/DataContext';
-import { useStore } from '../context/StoreContext';
-import { useOrders } from '../context/OrderContext';
+import { useCart } from '../context/useCart';
+import { useData } from '../context/useData';
+import { useStore } from '../context/useStore';
+import { useOrders } from '../context/useOrders';
 import { fetchCoordinatesByCep as fetchLatLon, fetchCoordinatesByAddress, calculateDrivingDistanceKm, calculateDeliveryFee } from '../utils/distance';
 import { getItemUnitPrice } from '../utils/price';
 
@@ -68,6 +68,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { settings } = useData();
   const { theme } = useStore();
   const { createOrder } = useOrders();
+  const checkoutLock = useRef(false);
+  const [saving, setSaving] = useState(false);
 
   const [step, setStep] = useState<'cart' | 'checkout'>('cart');
   const [cepLoading, setCepLoading] = useState(false);
@@ -77,10 +79,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const [deliveryRouteInfo, setDeliveryRouteInfo] = useState<{ isRoadRoute?: boolean; durationMinutes?: number } | null>(null);
 
   useEffect(() => {
-    if (settings.storeCep) {
-      fetchLatLon(settings.storeCep).then(coords => setStoreCoords(coords));
-    }
-  }, [settings.storeCep]);
+    if (!isOpen || step !== 'checkout' || !settings.storeCep) return;
+    let active = true;
+    fetchLatLon(settings.storeCep).then(coords => { if (active) setStoreCoords(coords); });
+    return () => { active = false; };
+  }, [settings.storeCep, isOpen, step]);
 
   const [formData, setFormData] = useState<CheckoutFormData>(() => {
     try {
@@ -122,69 +125,49 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   });
 
   useEffect(() => {
-    const cleanCep = formData.cep.replace(/\D/g, '');
-    if (cleanCep.length === 8) {
-      const fetchAddressAndDistance = async () => {
-        setCepLoading(true);
-        setCepError('');
-        try {
-          const addr = await fetchAddressByCep(cleanCep);
-          if (addr) {
-            setFormData(prev => ({
-              ...prev,
-              street: prev.street || addr.logradouro,
-              neighborhood: prev.neighborhood || addr.bairro,
-              city: addr.cidade,
-              state: addr.estado,
-            }));
-            
-            // Calcula rota veicular real se as coordenadas da loja estiverem disponíveis
-            if (storeCoords) {
-              const clientCoords = await fetchCoordinatesByAddress({
-                cep: cleanCep,
-                street: addr.logradouro || formData.street,
-                number: formData.number,
-                neighborhood: addr.bairro || formData.neighborhood,
-                city: addr.cidade,
-                state: addr.estado,
-              });
-
-              if (clientCoords) {
-                const route = await calculateDrivingDistanceKm(
-                  storeCoords.lat,
-                  storeCoords.lon,
-                  clientCoords.lat,
-                  clientCoords.lon
-                );
-                setDeliveryDistanceKm(route.distanceKm);
-                setDeliveryRouteInfo({
-                  isRoadRoute: route.isRoadRoute,
-                  durationMinutes: route.durationMinutes
-                });
-              } else {
-                setDeliveryDistanceKm(null);
-                setDeliveryRouteInfo(null);
-              }
-            }
-          }
-        } catch (err: any) {
-          setCepError(err.message || 'Erro ao buscar CEP');
-          setDeliveryDistanceKm(null);
-          setDeliveryRouteInfo(null);
-        } finally {
-          setCepLoading(false);
-        }
-      };
-      fetchAddressAndDistance();
-    } else {
+    if (!isOpen || step !== 'checkout') return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      const cleanCep = formData.cep.replace(/\D/g, '');
       setCepError('');
       setDeliveryDistanceKm(null);
       setDeliveryRouteInfo(null);
-    }
-  }, [formData.cep, storeCoords]);
+      if (cleanCep.length !== 8) { setCepLoading(false); return; }
+      setCepLoading(true);
+      try {
+        const addr = await fetchAddressByCep(cleanCep);
+        if (!active || !addr) return;
+        setFormData(prev => ({
+          ...prev,
+          street: prev.street || addr.logradouro,
+          neighborhood: prev.neighborhood || addr.bairro,
+          city: addr.cidade,
+          state: addr.estado,
+        }));
+        if (storeCoords) {
+          const coords = await fetchCoordinatesByAddress({
+            cep: cleanCep, street: formData.street || addr.logradouro,
+            number: formData.number, neighborhood: formData.neighborhood || addr.bairro,
+            city: addr.cidade, state: addr.estado,
+          });
+          if (!active || !coords) return;
+          const route = await calculateDrivingDistanceKm(storeCoords.lat, storeCoords.lon, coords.lat, coords.lon);
+          if (!active) return;
+          setDeliveryDistanceKm(route.distanceKm);
+          setDeliveryRouteInfo({ isRoadRoute: route.isRoadRoute, durationMinutes: route.durationMinutes });
+        }
+      } catch (err) {
+        if (active) setCepError(err instanceof Error ? err.message : 'Erro ao buscar CEP');
+      } finally {
+        if (active) setCepLoading(false);
+      }
+    }, 350);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [formData.cep, formData.street, formData.number, formData.neighborhood, storeCoords, isOpen, step]);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (checkoutLock.current || cart.length === 0) return;
 
     if (!formData.name.trim()) return alert('Por favor, informe seu nome.');
     const cleanPhone = formData.phone.replace(/\D/g, '');
@@ -202,7 +185,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
     const storeName = settings.name || 'Adega do Vado';
     
-    let paymentDesc = '';
+    let paymentDesc: string;
     if (formData.paymentMethod === 'pix') {
       paymentDesc = 'Pix';
     } else if (formData.paymentMethod === 'card') {
@@ -217,6 +200,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     }
     const finalTotal = totalPrice + deliveryFee;
 
+    checkoutLock.current = true;
+    setSaving(true);
     try {
       await createOrder({
         source: 'ONLINE',
@@ -232,7 +217,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         delivery_city: formData.city,
         delivery_state: formData.state,
         payment_method: formData.paymentMethod,
-        change_for: formData.changeFor ? parseFloat(formData.changeFor.replace(',', '.')) : undefined,
+      change_for: formData.paymentMethod === 'cash' && formData.changeFor ? parseFloat(formData.changeFor.replace(',', '.')) : undefined,
         subtotal: totalPrice,
         delivery_fee: deliveryFee,
         discount: 0,
@@ -246,11 +231,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             unit_price: unitPrice,
             total_price: unitPrice * item.quantity
           };
-        }) as any
+        })
       });
     } catch (err) {
       console.error('Erro ao salvar pedido no Supabase:', err);
-      // Continua para o WhatsApp mesmo se falhar (fallback manual)
+      alert(err instanceof Error ? err.message : 'Não foi possível gravar o pedido. Seu carrinho foi mantido.');
+      return;
+    } finally {
+      checkoutLock.current = false;
+      setSaving(false);
     }
 
     const cartText = cart.map(item => {
@@ -265,7 +254,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       return `📦 *${item.quantity}x ${item.name}*${item.selectedFlavor ? ` (Sabor: ${item.selectedFlavor})` : ''}${isWholesale ? ' *(Preço de Atacado)*' : ''}\n   ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
     }).join('\n\n');
 
-    let addressText = '';
+    let addressText: string;
     if (formData.deliveryMethod === 'delivery') {
       addressText = `*📍 Endereço de Entrega:*\n` +
         `• CEP: ${formData.cep}\n` +
@@ -718,7 +707,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <button
                           key={method.id}
                           type="button"
-                          onClick={() => setFormData({ ...formData, paymentMethod: method.id as any })}
+                          onClick={() => setFormData({ ...formData, paymentMethod: method.id as CheckoutFormData['paymentMethod'] })}
                           className="py-3.5 px-2 rounded-xl text-xs font-bold transition-all border text-center"
                           style={{
                             background: formData.paymentMethod === method.id ? `${theme.accent}15` : theme.bgSecondary,
@@ -786,11 +775,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     <button
                       type="submit"
                       form="checkout-form"
+                      disabled={saving}
                       className="w-full py-6 rounded-[24px] font-black text-lg flex items-center justify-center gap-3 transition-all shadow-2xl active:scale-[0.98] hover:scale-[1.02] group"
                       style={{ background: theme.gradientCta, color: '#fff', boxShadow: theme.shadowCta }}
                     >
                       <MessageCircle size={24} strokeWidth={2.5} className="group-hover:animate-bounce" />
-                      Finalizar no WhatsApp
+                      {saving ? 'Salvando pedido...' : 'Finalizar no WhatsApp'}
                     </button>
                     <button
                       type="button"

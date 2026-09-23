@@ -1,6 +1,7 @@
+import type { Order } from '../../types';
 import React, { useState } from 'react';
-import { useOrders } from '../../context/OrderContext';
-import { useAuth } from '../../context/AuthContext';
+import { useOrders } from '../../context/useOrders';
+import { useAuth } from '../../context/useAuth';
 import { OrderCard } from '../../components/operacao/OrderCard';
 import type { OrderStatus } from '../../types';
 import { DollarSign, TrendingUp, CreditCard, Award, ChevronDown, ChevronUp, Lock } from 'lucide-react';
@@ -181,7 +182,7 @@ export const Dashboard: React.FC = () => {
   );
 };
 
-const KanbanColumn = ({ title, orders }: { title: string, orders: any[] }) => (
+const KanbanColumn = ({ title, orders }: { title: string, orders: Order[] }) => (
   <div className="w-72 sm:w-80 flex flex-col shrink-0 bg-[#100810] rounded-2xl border border-[#C9963C]/10 overflow-hidden">
     <div className="px-5 py-4 border-b border-[#C9963C]/10 bg-black/20 flex justify-between items-center">
       <h3 className="font-bold text-[#C9963C]">{title}</h3>

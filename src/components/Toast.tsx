@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, X } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useStore } from '../context/useStore';
 
 interface ToastProps {
   message: string;

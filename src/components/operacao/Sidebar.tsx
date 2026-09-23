@@ -9,8 +9,8 @@ import {
   CheckCircle, 
   Bike 
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useOrders } from '../../context/OrderContext';
+import { useAuth } from '../../context/useAuth';
+import { useOrders } from '../../context/useOrders';
 
 export const Sidebar: React.FC = () => {
   const { profile, activeRole, setActiveRole, opEmployee, logoutOpEmployee } = useAuth();

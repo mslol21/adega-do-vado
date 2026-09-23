@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight, Flame, GlassWater } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useStore } from '../context/useStore';
 
 const iconMap: Record<string, React.ReactNode> = {
   Flame: <Flame size={28} />,

@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Share, PlusSquare, Smartphone } from 'lucide-react';
 
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<InstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [isIOS] = useState(() => /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()));
   const [showIOSModal, setShowIOSModal] = useState(false);
 
   useEffect(() => {
     // Verifica se o aplicativo já está instalado / rodando em modo standalone
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ||
       document.referrer.includes('android-app://');
 
     if (isStandalone) {
@@ -20,7 +25,6 @@ export const PWAInstallPrompt: React.FC = () => {
     // Detecta se é iOS / iPhone / iPad
     const userAgent = window.navigator.userAgent.toLowerCase();
     const iosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(iosDevice);
 
     // Se a pessoa já fechou a mensagem nas últimas 24 horas
     const dismissedUntil = localStorage.getItem('pwa_prompt_dismissed');
@@ -31,7 +35,7 @@ export const PWAInstallPrompt: React.FC = () => {
     // Evento nativo do Chrome / Android / Desktop
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as InstallPromptEvent);
       setShowPrompt(true);
     };
 
@@ -40,7 +44,7 @@ export const PWAInstallPrompt: React.FC = () => {
     // No iOS, como não existe beforeinstallprompt, mostramos após 3 segundos
     if (iosDevice) {
       const timer = setTimeout(() => setShowPrompt(true), 3000);
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt); };
     }
 
     return () => {
@@ -79,7 +83,7 @@ export const PWAInstallPrompt: React.FC = () => {
         <div className="bg-[#100810]/95 border border-[#C9963C]/40 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 text-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-black/60 border border-[#C9963C]/40 rounded-xl flex items-center justify-center flex-shrink-0">
-              <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+              <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               <Smartphone className="text-[#C9963C] w-6 h-6 hidden" />
             </div>
             <div>

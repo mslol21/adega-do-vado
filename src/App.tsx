@@ -9,7 +9,7 @@ const AdminLogin = lazy(() => import('./pages/AdminLogin').then(module => ({ def
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(module => ({ default: module.AdminPanel })));
 import { Landing } from './pages/Landing';
 import { Toast } from './components/Toast';
-import { useData } from './context/DataContext';
+import { useData } from './context/useData';
 import { DataProvider } from './context/DataContext';
 import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
@@ -170,9 +170,9 @@ function StoreWrapper({ config, children }: { config: StoreConfig; children?: Re
   return (
     <StoreProvider config={config}>
       <AuthProvider storeId={config.id}>
-        <DataProvider storeConfig={config}>
-          <OrderProvider storeId={config.id} enableSync={children != null}>
-            <CartProvider>
+        <DataProvider key={config.id} storeConfig={config}>
+          <OrderProvider key={config.id} storeId={config.id} enableSync={children != null}>
+            <CartProvider key={config.id}>
               {children ?? <Store />}
             </CartProvider>
           </OrderProvider>

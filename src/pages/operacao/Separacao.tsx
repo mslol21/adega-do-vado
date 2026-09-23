@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOrders } from '../../context/OrderContext';
+import { useOrders } from '../../context/useOrders';
 import { OrderCard } from '../../components/operacao/OrderCard';
 import type { Order } from '../../types';
 
@@ -16,11 +16,13 @@ export const Separacao: React.FC = () => {
 
   const isAllChecked = selectedOrder?.items?.every(item => checkedItems[item.id]) ?? false;
 
-  const handleFinishSeparation = () => {
+  const handleFinishSeparation = async () => {
     if (selectedOrder) {
-      updateOrderStatus(selectedOrder.id, selectedOrder.order_type === 'DELIVERY' ? 'SEPARADO' : 'PRONTO');
-      setSelectedOrder(null);
-      setCheckedItems({});
+      try {
+        await updateOrderStatus(selectedOrder.id, selectedOrder.order_type === 'DELIVERY' ? 'SEPARADO' : 'PRONTO');
+        setSelectedOrder(null);
+        setCheckedItems({});
+      } catch { /* The provider displays the failure; keep the checklist. */ }
     }
   };
 

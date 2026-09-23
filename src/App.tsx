@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { SocialProof } from './components/SocialProof';
 import { ProductGrid } from './components/ProductGrid';
 import { CartDrawer } from './components/CartDrawer';
 import { FixedFooter } from './components/FixedFooter';
-import { AdminLogin } from './pages/AdminLogin';
-import { AdminPanel } from './pages/AdminPanel';
+const AdminLogin = lazy(() => import('./pages/AdminLogin').then(module => ({ default: module.AdminLogin })));
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then(module => ({ default: module.AdminPanel })));
 import { Landing } from './pages/Landing';
 import { Toast } from './components/Toast';
 import { useData } from './context/DataContext';
@@ -15,14 +15,14 @@ import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
 import { AuthProvider } from './context/AuthContext';
 import { OrderProvider } from './context/OrderContext';
-import { LayoutOperacao } from './pages/operacao/Layout';
-import { Dashboard } from './pages/operacao/Dashboard';
-import { Atendimento } from './pages/operacao/Atendimento';
-import { Recebimento } from './pages/operacao/Recebimento';
-import { Preparacao } from './pages/operacao/Preparacao';
-import { Separacao } from './pages/operacao/Separacao';
-import { Prontos } from './pages/operacao/Prontos';
-import { Entregas } from './pages/operacao/Entregas';
+const LayoutOperacao = lazy(() => import('./pages/operacao/Layout').then(module => ({ default: module.LayoutOperacao })));
+const Dashboard = lazy(() => import('./pages/operacao/Dashboard').then(module => ({ default: module.Dashboard })));
+const Atendimento = lazy(() => import('./pages/operacao/Atendimento').then(module => ({ default: module.Atendimento })));
+const Recebimento = lazy(() => import('./pages/operacao/Recebimento').then(module => ({ default: module.Recebimento })));
+const Preparacao = lazy(() => import('./pages/operacao/Preparacao').then(module => ({ default: module.Preparacao })));
+const Separacao = lazy(() => import('./pages/operacao/Separacao').then(module => ({ default: module.Separacao })));
+const Prontos = lazy(() => import('./pages/operacao/Prontos').then(module => ({ default: module.Prontos })));
+const Entregas = lazy(() => import('./pages/operacao/Entregas').then(module => ({ default: module.Entregas })));
 import { TABACARIA_CONFIG } from './data/tabacaria';
 import { ADEGA_CONFIG } from './data/adega';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
@@ -171,7 +171,7 @@ function StoreWrapper({ config, children }: { config: StoreConfig; children?: Re
     <StoreProvider config={config}>
       <AuthProvider storeId={config.id}>
         <DataProvider storeConfig={config}>
-          <OrderProvider storeId={config.id}>
+          <OrderProvider storeId={config.id} enableSync={children != null}>
             <CartProvider>
               {children ?? <Store />}
             </CartProvider>
@@ -186,6 +186,7 @@ function StoreWrapper({ config, children }: { config: StoreConfig; children?: Re
 function App() {
   return (
     <>
+      <Suspense fallback={<div role="status" className="min-h-screen flex items-center justify-center bg-black text-white">Carregando...</div>}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG} />} />
@@ -215,6 +216,7 @@ function App() {
         <Route path="/admin/adega" element={<StoreWrapper config={ADEGA_CONFIG}><AdminPanel /></StoreWrapper>} />
         <Route path="/admin" element={<AdminLogin />} />
       </Routes>
+      </Suspense>
 
       {/* Banner / Prompt de Instalação do App (PWA) */}
       <PWAInstallPrompt />

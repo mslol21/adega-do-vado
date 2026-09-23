@@ -14,7 +14,7 @@ interface OrderContextType {
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: string }> = ({ children, storeId }) => {
+export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: string; enableSync?: boolean }> = ({ children, storeId, enableSync = false }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
@@ -29,6 +29,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
   };
 
   useEffect(() => {
+    if (!enableSync) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     fetchOrders();
 
     // Sincronização entre abas no mesmo navegador/dispositivo
@@ -90,7 +96,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
       clearInterval(syncInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
+  }, [storeId, enableSync]);
 
   const fetchOrders = async () => {
     let localSaved: Order[] = [];

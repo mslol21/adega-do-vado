@@ -21,3 +21,11 @@ const partial = await catalogPages(async from => from === 0
 assert.equal(partial.data, null); // Never replace the catalog with a partial page.
 assert.ok(partial.error);
 console.log('Catalog retry, independent failures and complete pagination: passed');
+let aborted = 0;
+const timedOut = await catalogQuery(signal => {
+  signal.addEventListener('abort', () => aborted++);
+  return new Promise(() => {});
+}, 5);
+assert.ok(timedOut.error);
+assert.equal(aborted, 2);
+console.log('Hung requests are aborted and return an error: passed');

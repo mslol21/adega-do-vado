@@ -5,6 +5,45 @@ import { useStore } from '../context/useStore';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import type { Product } from '../types';
 
+// Helper to flexibly match category names and IDs regardless of accents, hyphens, plural/singular, or trailing spaces
+export const isCategoryMatch = (productCategory?: string, categoryId?: string, categoryName?: string): boolean => {
+  if (!productCategory) return false;
+
+  // Direct match
+  if (categoryId && productCategory === categoryId) return true;
+  if (categoryName && productCategory === categoryName) return true;
+
+  const normalize = (s: string) =>
+    s.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const pNorm = normalize(productCategory);
+  if (!pNorm) return false;
+
+  const idNorm = categoryId ? normalize(categoryId) : '';
+  const nameNorm = categoryName ? normalize(categoryName) : '';
+
+  if (idNorm && pNorm === idNorm) return true;
+  if (nameNorm && pNorm === nameNorm) return true;
+
+  // Partial / singular / plural match (e.g. cerveja vs cervejas, energetico- vs energeticos)
+  const isFuzzyMatch = (a: string, b: string) => {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length >= 4 && b.length >= 4) {
+      if (a.startsWith(b) || b.startsWith(a)) return true;
+    }
+    return false;
+  };
+
+  if (idNorm && isFuzzyMatch(pNorm, idNorm)) return true;
+  if (nameNorm && isFuzzyMatch(pNorm, nameNorm)) return true;
+
+  return false;
+};
+
 interface ProductGridProps {
   searchQuery?: string;
   onAddItem?: (name: string) => void;
@@ -88,7 +127,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
       // Normal navigation
       if (!selectedCategory) return active;
       
-      const catMatch = p.category === selectedCategory;
+      const catMatch = isCategoryMatch(p.category, selectedCategory, activeCategory?.name);
       const subMatch =
         selectedSubcategory === 'Todos' ||
         selectedSubcategory === 'Monte seu Kit' ||
@@ -96,7 +135,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
       
       return active && catMatch && subMatch;
     });
-  }, [products, selectedCategory, selectedSubcategory, searchQuery]);
+  }, [products, selectedCategory, selectedSubcategory, searchQuery, activeCategory]);
 
   const handleSelectCategory = (id: string | null) => {
     setSelectedCategory(id);
@@ -117,6 +156,26 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
   // Se está na tela inicial sem busca, mostramos as fileiras. Caso contrário, mostramos a grade de resultados/categoria.
   const isHomeView = !isSearching && !selectedCategory;
 
+  // Track uncategorized or unmatched products in home view to guarantee no product is ever omitted
+  const { categoryGroups, otherProducts, totalHomeProducts } = useMemo(() => {
+    const matchedIds = new Set<string>();
+    const groups = categories.map(category => {
+      const catProducts = products.filter(p => {
+        const match = isCategoryMatch(p.category, category.id, category.name) && p.isActive !== false;
+        if (match) matchedIds.add(p.id);
+        return match;
+      });
+      return { category, products: catProducts };
+    });
+
+    const others = products.filter(p => !matchedIds.has(p.id) && p.isActive !== false);
+    const total = groups.reduce((acc, g) => acc + g.products.length, 0) + others.length;
+
+    return { categoryGroups: groups, otherProducts: others, totalHomeProducts: total };
+  }, [categories, products]);
+
+  const allActiveProducts = useMemo(() => products.filter(p => p.isActive !== false), [products]);
+
   return (
     <section id="catalog" className="py-12 md:py-20 px-4 min-h-screen" style={{ backgroundColor: theme.bgPrimary }}>
       <div className="max-w-7xl mx-auto">
@@ -126,7 +185,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
           <div className="flex items-center justify-between mb-10 animate-fade-in">
             <div>
               <h2 className="text-3xl md:text-4xl font-serif font-bold" style={{ color: theme.accent }}>
-                {isSearching ? 'Resultados da Busca' : activeCategory?.name}
+                {isSearching ? 'Resultados da Busca' : (activeCategory?.name || 'Categoria')}
               </h2>
               <p className="mt-2 text-sm" style={{ color: theme.textMuted }}>
                 {isSearching 
@@ -147,25 +206,51 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
         {/* ── HOME VIEW (CAROUSEL ROWS) ────────────── */}
         {isHomeView && (
           <div className="space-y-4">
-            <CategoryRow 
-              title="Ofertas Especiais" 
-              products={promoProducts} 
-              onAdd={onAddItem} 
-              isPromo={true} 
-            />
+            {promoProducts.length > 0 && (
+              <CategoryRow 
+                title="Ofertas Especiais" 
+                products={promoProducts} 
+                onAdd={onAddItem} 
+                isPromo={true} 
+              />
+            )}
             
-            {categories.map(category => {
-              const catProducts = products.filter(p => p.category === category.id && p.isActive !== false);
-              return (
-                <CategoryRow 
-                  key={category.id}
-                  title={category.name}
-                  products={catProducts}
-                  onAdd={onAddItem}
-                  onSeeMore={() => handleSelectCategory(category.id)}
-                />
-              );
-            })}
+            {categoryGroups.map(({ category, products: catProducts }) => (
+              <CategoryRow 
+                key={category.id}
+                title={category.name}
+                products={catProducts}
+                onAdd={onAddItem}
+                onSeeMore={() => handleSelectCategory(category.id)}
+              />
+            ))}
+
+            {otherProducts.length > 0 && (
+              <CategoryRow 
+                title="Mais Opções" 
+                products={otherProducts} 
+                onAdd={onAddItem} 
+              />
+            )}
+
+            {/* If categories have 0 matched products but products exist, render grid fallback */}
+            {totalHomeProducts === 0 && allActiveProducts.length > 0 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="w-6 h-1 rounded-full" style={{ background: theme.accent }} />
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold" style={{ color: theme.accent }}>
+                    Todos os Produtos
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
+                  {allActiveProducts.map(product => (
+                    <div key={product.id} className="animate-fade-in h-full">
+                      <ProductCard product={product} onAdd={() => onAddItem?.(product.name)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -212,3 +297,4 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ searchQuery = '', onAd
     </section>
   );
 };
+

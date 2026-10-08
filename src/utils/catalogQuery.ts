@@ -21,9 +21,11 @@ export async function catalogQuery<T>(query: (signal: AbortSignal) => PromiseLik
   }
 }
 
-export async function catalogPages<T>(query: (from: number, to: number, signal: AbortSignal) => PromiseLike<{ data: T[] | null; error: unknown }>) {
+export async function catalogPages<T>(
+  query: (from: number, to: number, signal: AbortSignal) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  pageSize = 500
+) {
   const rows: T[] = [];
-  const pageSize = 10;
   for (let from = 0; ; from += pageSize) {
     const result = await catalogQuery(signal => query(from, from + pageSize - 1, signal));
     if (result.error) return { data: null, error: result.error };

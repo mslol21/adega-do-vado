@@ -34,7 +34,7 @@ function Store() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
-  const { settings, loading } = useData();
+  const { settings, loading, products } = useData();
   const navigate = useNavigate();
 
   const showToast = (message: string) => {
@@ -44,7 +44,7 @@ function Store() {
   // Importamos o tema do DataContext via settings, mas o tema visual vem do StoreContext
   // O Navbar e outros componentes já usam useStore() internamente
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#080508' }}>
         <div className="flex flex-col items-center gap-4">

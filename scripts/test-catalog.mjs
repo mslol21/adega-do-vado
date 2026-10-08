@@ -14,10 +14,10 @@ const results = await Promise.all([
 assert.deepEqual(results[0].data, ['product']);
 assert.ok(results[1].error);
 const rows = Array.from({ length: 23 }, (_, id) => ({ id }));
-assert.deepEqual((await catalogPages(async (from, to) => ({ data: rows.slice(from, to + 1), error: null }))).data, rows);
+assert.deepEqual((await catalogPages(async (from, to) => ({ data: rows.slice(from, to + 1), error: null }), 10)).data, rows);
 const partial = await catalogPages(async from => from === 0
   ? { data: rows.slice(0, 10), error: null }
-  : { data: null, error: new Error('timeout') });
+  : { data: null, error: new Error('timeout') }, 10);
 assert.equal(partial.data, null); // Never replace the catalog with a partial page.
 assert.ok(partial.error);
 console.log('Catalog retry, independent failures and complete pagination: passed');

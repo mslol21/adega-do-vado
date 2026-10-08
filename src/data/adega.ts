@@ -69,6 +69,95 @@ export const ADEGA_CONFIG: StoreConfig = {
     { id: 'kits', name: 'Kits Presente', image: 'https://images.unsplash.com/photo-1535443274868-756b0f070b6e?q=80&w=800', subcategories: ['Monte seu Kit'] },
   ],
   products: [
-    // ... products
+    {
+      id: 'adega_prod_1',
+      name: 'Whisky Johnnie Walker Black Label 1L',
+      description: 'Whisky escocês 12 anos, sabor rico e defumado. O clássico do churrasco.',
+      price: 159.90,
+      promotionalPrice: 139.90,
+      image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=800',
+      category: 'destilados',
+      subcategory: 'Whisky',
+      isActive: true,
+      stockQuantity: 24,
+      wholesalePrice: 129.90,
+      wholesaleMinQuantity: 3
+    },
+    {
+      id: 'adega_prod_2',
+      name: 'Gin Tanqueray London Dry 750ml',
+      description: 'Gin premium com 4 botânicos equilibrados. Perfeito com tônica e limão.',
+      price: 119.90,
+      image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=800',
+      category: 'destilados',
+      subcategory: 'Gin',
+      isActive: true,
+      stockQuantity: 18,
+      wholesalePrice: 99.90,
+      wholesaleMinQuantity: 3
+    },
+    {
+      id: 'adega_prod_3',
+      name: 'Vodka Smirnoff 998ml',
+      description: 'Vodka triplamente destilada e dez vezes filtrada. Ideal para caipiroskas.',
+      price: 49.90,
+      image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=800',
+      category: 'destilados',
+      subcategory: 'Vodka',
+      isActive: true,
+      stockQuantity: 36,
+      wholesalePrice: 42.00,
+      wholesaleMinQuantity: 6
+    },
+    {
+      id: 'adega_prod_4',
+      name: 'Cerveja Heineken Lata 350ml (Pack 12un)',
+      description: 'Cerveja puro malte gelada. Pack com 12 latinhas.',
+      price: 68.90,
+      promotionalPrice: 59.90,
+      image: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?q=80&w=800',
+      category: 'cervejas',
+      subcategory: 'Pilsen',
+      isActive: true,
+      stockQuantity: 50,
+      wholesalePrice: 54.00,
+      wholesaleMinQuantity: 3
+    },
+    {
+      id: 'adega_prod_5',
+      name: 'Vinho Tinto Chileno Concha y Toro Reservado 750ml',
+      description: 'Cabernet Sauvignon chileno encorpado com notas de frutas vermelhas.',
+      price: 39.90,
+      image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800',
+      category: 'vinhos',
+      subcategory: 'Tinto',
+      isActive: true,
+      stockQuantity: 30,
+      wholesalePrice: 34.00,
+      wholesaleMinQuantity: 6
+    },
+    {
+      id: 'adega_prod_6',
+      name: 'Saco de Gelo Filtrado 5kg (Cubo ou Escama)',
+      description: 'Gelo puro filtrado de alta duração para bebidas e coolers.',
+      price: 15.00,
+      image: 'https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?q=80&w=800',
+      category: 'acessórios',
+      subcategory: 'Gelo',
+      flavors: 'Gelo em Cubo, Gelo em Escama',
+      isActive: true,
+      stockQuantity: 100
+    },
+    {
+      id: 'adega_prod_7',
+      name: 'Carvão Vegetal Eucalipto 2,5kg',
+      description: 'Carvão selecionado de acendimento rápido e longa brasa.',
+      price: 18.00,
+      image: 'https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?q=80&w=800',
+      category: 'acessórios',
+      subcategory: 'Carvão',
+      isActive: true,
+      stockQuantity: 40
+    }
   ],
 };

@@ -11,8 +11,31 @@ interface DataProviderProps {
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfig }) => {
-  const [products, setProducts] = useState<Product[]>(isOfflineMode ? storeConfig.products : []);
-  const [categories, setCategories] = useState<Category[]>(isOfflineMode ? storeConfig.categories : []);
+  // Leitura inicial de cache local ou fallback da configuração da loja
+  const getInitialProducts = (): Product[] => {
+    try {
+      const cached = localStorage.getItem(`vado_cached_products_${storeConfig.id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return storeConfig.products || [];
+  };
+
+  const getInitialCategories = (): Category[] => {
+    try {
+      const cached = localStorage.getItem(`vado_cached_categories_${storeConfig.id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return storeConfig.categories || [];
+  };
+
+  const [products, setProducts] = useState<Product[]>(getInitialProducts);
+  const [categories, setCategories] = useState<Category[]>(getInitialCategories);
   const [globalOptions, setGlobalOptions] = useState<GlobalOption[]>([]);
   const [settings, setSettings] = useState<ShopSettings>({
     name: storeConfig.name,
@@ -25,7 +48,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     deliveryFeePerKm: storeConfig.deliveryFeePerKm,
     deliveryBaseFee: storeConfig.deliveryBaseFee,
   });
-  const [loading, setLoading] = useState(!isOfflineMode);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [productsLoaded, setProductsLoaded] = useState(isOfflineMode);
 
@@ -70,8 +93,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
           promotionalPrice: p.promotional_price !== null && p.promotional_price !== undefined && p.promotional_price !== '' ? parseFloat(String(p.promotional_price).replace(',', '.')) : undefined
         }));
         setProducts(mappedProducts);
-      } else {
-        setProducts([]);
+        try {
+          localStorage.setItem(`vado_cached_products_${storeConfig.id}`, JSON.stringify(mappedProducts));
+        } catch (e) {}
+      } else if (storeConfig.products && storeConfig.products.length > 0) {
+        setProducts(storeConfig.products);
       }
       setProductsLoaded(true);
       }
@@ -81,8 +107,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       if (!categoriesError) {
       if (catData && catData.length > 0) {
         setCategories(catData);
-      } else {
-        setCategories([]);
+        try {
+          localStorage.setItem(`vado_cached_categories_${storeConfig.id}`, JSON.stringify(catData));
+        } catch (e) {}
+      } else if (storeConfig.categories && storeConfig.categories.length > 0) {
+        setCategories(storeConfig.categories);
       }
       }
 
@@ -95,8 +124,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       }
 
     }).catch(error => {
-      console.error('Error fetching data:', error);
-      setLoadError('Não foi possível atualizar o catálogo. Verifique sua conexão e tente novamente.');
+      console.warn('⚠️ Erro ao consultar dados no Supabase (ativando contingência local):', error);
+      // Se o banco retornou 402 ou erro de rede, assegura que o catálogo continue funcionando
+      setProducts(prev => (prev && prev.length > 0 ? prev : (storeConfig.products || [])));
+      setCategories(prev => (prev && prev.length > 0 ? prev : (storeConfig.categories || [])));
+      
+      // Se não houver nenhum produto sequer, exibe aviso
+      const hasAnyProduct = (storeConfig.products && storeConfig.products.length > 0) || getInitialProducts().length > 0;
+      if (!hasAnyProduct) {
+        setLoadError('Não foi possível carregar os produtos. Verifique sua conexão.');
+      }
     }).finally(() => setLoading(false));
   }, [storeConfig.id]);
 

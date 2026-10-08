@@ -50,12 +50,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   });
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [productsLoaded, setProductsLoaded] = useState(isOfflineMode);
+  const [productsLoaded, setProductsLoaded] = useState(() => {
+    if (isOfflineMode) return true;
+    const initial = getInitialProducts();
+    return initial.length > 0;
+  });
 
   const fetchData = useCallback(() => {
     if (isOfflineMode) return Promise.resolve();
     return Promise.all([
-      catalogPages((from, to, signal) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('created_at', { ascending: false }).order('id').range(from, to).abortSignal(signal)),
+      catalogPages((from, to, signal) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('id').range(from, to).abortSignal(signal), 25),
       catalogQuery(signal => supabase.from('settings').select('*').eq('store_id', storeConfig.id).abortSignal(signal).maybeSingle()),
       catalogQuery(signal => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name').abortSignal(signal)),
       catalogQuery(signal => supabase.from('global_options').select('*').order('name').abortSignal(signal)),
@@ -412,10 +416,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
       addCategory, updateCategory, deleteCategory,
       addGlobalOption, updateGlobalOption, deleteGlobalOption, applyStockSnapshot
     }}>
-      {loadError && <div role="alert" className="bg-red-950 text-white p-4">
-        {loadError} <button type="button" onClick={() => void fetchData()} className="underline">Tentar novamente</button>
-      </div>}
-      {!loading && !productsLoaded ? (
+      {loadError && products.length === 0 && (
+        <div role="alert" className="bg-red-950 text-white p-4">
+          {loadError} <button type="button" onClick={() => void fetchData()} className="underline">Tentar novamente</button>
+        </div>
+      )}
+      {!loading && !productsLoaded && products.length === 0 ? (
         <div role="status" className="p-8 text-center text-white">
           Catálogo indisponível no momento. Não foi possível consultar os produtos cadastrados.
         </div>

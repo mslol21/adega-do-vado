@@ -1,5 +1,5 @@
 // Retry transient reads once; never convert a failed read into an empty list.
-export async function catalogQuery<T>(query: (signal: AbortSignal) => PromiseLike<{ data: T; error: unknown }>, timeoutMs = 12000) {
+export async function catalogQuery<T>(query: (signal: AbortSignal) => PromiseLike<{ data: T; error: unknown }>, timeoutMs = 15000) {
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -23,7 +23,7 @@ export async function catalogQuery<T>(query: (signal: AbortSignal) => PromiseLik
 
 export async function catalogPages<T>(
   query: (from: number, to: number, signal: AbortSignal) => PromiseLike<{ data: T[] | null; error: unknown }>,
-  pageSize = 500
+  pageSize = 25
 ) {
   const rows: T[] = [];
   for (let from = 0; ; from += pageSize) {

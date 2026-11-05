@@ -201,3 +201,85 @@ body {
   animation: pulseGlow 3s infinite ease-in-out;
   z-index: 10;
 }
+
+/* Neon identity: paint-only effects, shared by storefront and control panels. */
+:root {
+  --neon-rgb: 255, 194, 61;
+  --neon-line: rgba(var(--neon-rgb), .46);
+  --neon-halo: 0 0 16px rgba(var(--neon-rgb), .16);
+}
+@media screen {
+  h1, h2 {
+    text-shadow: 0 0 18px rgba(var(--neon-rgb), .28);
+  }
+  .gold-gradient {
+    filter: drop-shadow(0 0 8px rgba(var(--neon-rgb), .28));
+  }
+  header, nav, footer, .glass-morphism {
+    border-color: var(--neon-line);
+    box-shadow: 0 1px 0 rgba(var(--neon-rgb), .3), 0 6px 24px rgba(var(--neon-rgb), .08);
+  }
+  .neon-card, .card-premium {
+    border-color: var(--neon-line) !important;
+    box-shadow: inset 0 0 0 1px rgba(var(--neon-rgb), .09),
+      0 0 16px rgba(var(--neon-rgb), .13), 0 16px 32px rgba(0,0,0,.3) !important;
+  }
+  .neon-portal h1, .neon-portal h2 {
+    text-shadow: 0 0 10px rgba(var(--neon-rgb), .5),
+      0 0 28px rgba(var(--neon-rgb), .25) !important;
+  }
+  .neon-portal {
+    padding-block: clamp(2rem, 5vw, 4rem);
+  }
+  .neon-portal > div:first-child {
+    background: radial-gradient(ellipse at 20% 20%, rgba(255,180,30,.18), transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(255,110,30,.12), transparent 55%) !important;
+  }
+  .neon-portal img[alt="Adega do Vado Logo"], .monogram-circle {
+    filter: drop-shadow(0 0 14px rgba(var(--neon-rgb), .3));
+  }
+  .neon-cta:not(:disabled), .gold-bg-gradient, .ember-bg-gradient {
+    box-shadow: 0 0 12px rgba(var(--neon-rgb), .35),
+      0 0 28px rgba(var(--neon-rgb), .18) !important;
+  }
+  :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #ffe29a;
+    outline-offset: 4px;
+    box-shadow: var(--neon-halo);
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #ffc23d;
+  }
+  /* Promotion cards keep their highlight without perpetual filters/scaling. */
+  .promo-glow { animation: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .neon-card:hover, .neon-card:focus-within, .card-premium:hover {
+      border-color: #ffd477 !important;
+      box-shadow: inset 0 0 0 1px rgba(var(--neon-rgb), .22),
+        0 0 22px rgba(var(--neon-rgb), .28), 0 16px 36px rgba(0,0,0,.4) !important;
+    }
+    .neon-cta:not(:disabled):hover {
+      filter: brightness(1.08);
+    }
+  }
+  @media (max-width: 640px) {
+    .neon-card, .card-premium {
+      box-shadow: 0 0 10px rgba(var(--neon-rgb), .14) !important;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media print {
+  *, *::before, *::after {
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+}

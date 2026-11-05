@@ -55,7 +55,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
     <>
       <div
         onClick={handleCardClick}
-        className={`group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full animate-slide-up hover:-translate-y-2 cursor-pointer ${
+        className={`neon-card group relative flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden border transition-all duration-500 h-full animate-slide-up hover:-translate-y-2 cursor-pointer ${
           isPromo ? 'promo-glow' : ''
         }`}
         style={{ 
@@ -204,7 +204,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
               onClick={handleAdd}
               disabled={product.stockQuantity === 0}
               title={flavorOptions.length > 0 ? 'Escolher Sabor' : 'Adicionar ao Carrinho'}
-              className={`h-9 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shadow-lg cursor-pointer ${
+              className={`neon-cta h-9 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shadow-lg cursor-pointer ${
                 flavorOptions.length > 0 ? 'px-3 sm:px-4 gap-1.5' : 'w-9 sm:w-12'
               } ${
                 product.stockQuantity === 0 

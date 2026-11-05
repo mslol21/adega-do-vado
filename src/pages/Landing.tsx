@@ -52,7 +52,7 @@ const stores = [
 export const Landing: React.FC = () => {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      className="neon-portal min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
       style={{ background: '#050505' }}
     >
       {/* Ambient background */}
@@ -101,7 +101,7 @@ export const Landing: React.FC = () => {
             <Link
               to={store.path}
               id={`landing-${store.id}-btn`}
-              className="group block relative rounded-3xl overflow-hidden border transition-all duration-500"
+              className="neon-card group block relative rounded-3xl overflow-hidden border transition-all duration-500"
               style={{
                 borderColor: store.borderColor,
                 boxShadow: `0 0 0 0 ${store.shadowColor}`,
@@ -189,7 +189,7 @@ export const Landing: React.FC = () => {
 
                   {/* CTA */}
                   <div
-                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-bold text-black transition-all duration-300 group-hover:scale-[1.02]"
+                    className="neon-cta w-full flex items-center justify-between px-6 py-4 rounded-2xl font-bold text-black transition-all duration-300 group-hover:scale-[1.02]"
                     style={{
                       background: store.ctaGradient,
                       boxShadow: `0 8px 24px -8px ${store.shadowColor}`,

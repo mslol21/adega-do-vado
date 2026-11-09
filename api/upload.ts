@@ -21,6 +21,11 @@ const matchesMagic = (bytes: Uint8Array, type: string) => {
 };
 
 export default async function handler(request: Request): Promise<Response> {
+  if (request.method === 'GET') {
+    const ready = ['NEON_STORAGE_DATA_API_URL','NEON_STORAGE_API_TOKEN','NEON_STORAGE_PROJECT_ID','NEON_STORAGE_BRANCH_ID','NEON_STORAGE_PUBLIC_BASE']
+      .every(key => !!serverEnv[key]);
+    return json({ status: ready ? 'configured' : 'unconfigured' }, ready ? 200 : 503);
+  }
   if (request.method !== 'POST') return json({ error: 'Método não permitido.' }, 405);
   const bearer = request.headers.get('authorization')?.match(/^Bearer ([A-Za-z0-9_.-]+)$/)?.[1];
   if (!bearer || bearer.length > 8192) return json({ error: 'Faça login como administrador.' }, 401);

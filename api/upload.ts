@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 /**
  * Authenticated Neon Object Storage uploader (Vercel Function).
  * Credentials are server-side only. The Data API authenticates the caller

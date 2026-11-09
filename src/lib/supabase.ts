@@ -1,16 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient as createNeonClient } from '@neon/neon-js/supabase';
 
+const useNeon = import.meta.env.VITE_DATA_PROVIDER === 'neon';
+const neonUrl = (import.meta.env.VITE_NEON_URL || '').trim();
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Consider offline if missing or if user just pasted the literal placeholder text
-export const isOfflineMode = !rawUrl || !rawKey || rawUrl === 'Sua_URL_do_Supabase' || rawUrl === 'https://placeholder-project.supabase.co';
+// Feature-flagged Neon client for migration preview. Production remains on
+// Supabase until orders, administration, storage and authentication pass tests.
+export const isOfflineMode = useNeon
+  ? !neonUrl
+  : !rawUrl || !rawKey || rawUrl === 'Sua_URL_do_Supabase' ||
+    rawUrl === 'https://placeholder-project.supabase.co';
+
+if (isOfflineMode) {
+  console.error('Conexão do banco não configurada. Usando dados locais.');
+}
 
 const supabaseUrl = isOfflineMode ? 'https://placeholder-project.supabase.co' : rawUrl;
 const supabaseAnonKey = isOfflineMode ? 'placeholder-key' : rawKey;
 
-if (isOfflineMode) {
-  console.error('⚠️ ATENÇÃO: Chaves do Supabase inválidas ou não encontradas no .env. A aplicação está rodando com dados de demonstração (locais).');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase: SupabaseClient = useNeon && !isOfflineMode
+  ? createNeonClient(neonUrl, {
+      auth: { allowAnonymous: true },
+    }) as unknown as SupabaseClient
+  : createClient(supabaseUrl, supabaseAnonKey);

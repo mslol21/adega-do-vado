@@ -299,9 +299,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
     // Until then, preserve upload functionality with a bounded data URL;
     // never upload to Supabase while testing Neon.
     if (useNeon) {
-      if (file.size > 1024 * 1024) throw new Error('A imagem precisa ter no máximo 1 MB durante a migração.');
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Formato de imagem não permitido.');
-      return fileToBase64(file);
+      if (file.size > 3 * 1024 * 1024) throw new Error('A imagem precisa ter no máximo 3 MB.');
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError || !session?.access_token) throw new Error('Faça login como administrador para enviar imagens.');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('storeId', storeConfig.id);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+        cache: 'no-store',
+      });
+      const result = await response.json() as {url?: string; error?: string};
+      if (!response.ok || !result.url) throw new Error(result.error || 'Falha ao enviar a imagem ao Neon.');
+      return result.url;
     }
     if (isOfflineMode) {
       return await fileToBase64(file);

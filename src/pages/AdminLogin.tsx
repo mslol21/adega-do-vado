@@ -16,6 +16,8 @@ export const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('admin@adegadovado.com.br');
   const [submitting, setSubmitting] = useState(false);
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,16 +54,41 @@ export const AdminLogin: React.FC = () => {
   };
 
   const recoverAccess = async () => {
-    if (!email.trim()) { setError('Informe seu e-mail para recuperar o acesso.'); return; }
+    if (!email.trim() || !selectedStore || submitting) { setError('Informe seu e-mail e selecione a loja.'); return; }
     setSubmitting(true);
+    setError('');
     try {
-      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: window.location.origin + '/admin',
-      });
-      if (recoveryError) throw recoveryError;
-      setError('Se o e-mail estiver habilitado, as instruções de recuperação serão enviadas.');
+      const { error: otpError } = await supabase.auth.signInWithOtp({ email: email.trim() });
+      if (otpError) throw otpError;
+      setOtpRequested(true);
+      setError('Enviamos um código de acesso ao e-mail informado. Confira a caixa de entrada e o spam.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao solicitar recuperação.');
+      setError(err instanceof Error ? err.message : 'Falha ao solicitar código de acesso.');
+    } finally { setSubmitting(false); }
+  };
+
+  const confirmOtp = async () => {
+    if (!selectedStore || !otpCode.trim() || submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const { data, error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim(), token: otpCode.trim(), type: 'email',
+      });
+      if (otpError) throw otpError;
+      const userId = data.user?.id || data.session?.user?.id;
+      if (!userId) throw new Error('Código não confirmou uma sessão válida.');
+      const { data: profile, error: profileError } = await supabase.from('profiles')
+        .select('role').eq('user_id', userId).eq('store_id', selectedStore).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.role !== 'ADMIN') {
+        await supabase.auth.signOut();
+        throw new Error('Conta sem autorização para esta loja.');
+      }
+      sessionStorage.setItem('admin_auth','true');
+      navigate(STORES.find(store => store.id === selectedStore)?.path || '/admin/adega');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código inválido ou expirado.');
     } finally { setSubmitting(false); }
   };
 
@@ -109,9 +136,17 @@ export const AdminLogin: React.FC = () => {
             <button type="submit"
               className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg, #F2BC1B, #FFD700)', color: '#0D151D' }}>
-              {submitting ? "Verificando..." : "Entrar no Painel"} <ArrowRight size={18} />
+              {submitting ? "Verificando..." : useNeon ? "Entrar com senha" : "Entrar no Painel"} <ArrowRight size={18} />
             </button>
-            {useNeon && <button type="button" disabled={submitting} onClick={() => void recoverAccess()} className="text-xs text-[#F2BC1B] w-full text-center underline">Primeiro acesso ou esqueci minha senha</button>}
+            {useNeon && <>
+              <button type="button" disabled={submitting} onClick={() => void recoverAccess()} className="text-xs text-[#F2BC1B] w-full text-center underline">Primeiro acesso: enviar código por e-mail</button>
+              {otpRequested && <div className="space-y-2">
+                <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="Código recebido no e-mail" value={otpCode} onChange={event => setOtpCode(event.target.value)}
+                  className="w-full rounded-xl p-3 bg-[#1D2B3A] text-white text-center border border-[#F2BC1B50]" />
+                <button type="button" disabled={submitting || !otpCode.trim()} onClick={() => void confirmOtp()}
+                  className="w-full rounded-xl p-3 bg-[#F2BC1B] text-black font-bold">Confirmar código e acessar</button>
+              </div>}
+            </>}
           </form>
         )}
       </div>

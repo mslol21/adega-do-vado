@@ -1,7 +1,7 @@
 import { DataContext } from './useData';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
-import { supabase, isOfflineMode } from '../lib/supabase';
+import { supabase, isOfflineMode, useNeon } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
 import { catalogQuery, catalogPages } from '../utils/catalogQuery';
 
@@ -295,6 +295,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const uploadFile = async (file: File) => {
+    // Neon Storage uploads require signed, authorized server endpoints.
+    // Until then, preserve upload functionality with a bounded data URL;
+    // never upload to Supabase while testing Neon.
+    if (useNeon) {
+      if (file.size > 1024 * 1024) throw new Error('A imagem precisa ter no máximo 1 MB durante a migração.');
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Formato de imagem não permitido.');
+      return fileToBase64(file);
+    }
     if (isOfflineMode) {
       return await fileToBase64(file);
     }

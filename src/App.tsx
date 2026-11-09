@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { SocialProof } from './components/SocialProof';
 import { ProductGrid } from './components/ProductGrid';
@@ -215,6 +215,7 @@ function App() {
         <Route path="/admin/tabacaria" element={<StoreWrapper config={TABACARIA_CONFIG}><AdminPanel /></StoreWrapper>} />
         <Route path="/admin/adega" element={<StoreWrapper config={ADEGA_CONFIG}><AdminPanel /></StoreWrapper>} />
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/login" element={<Navigate to="/admin" replace />} />
       </Routes>
       </Suspense>
 

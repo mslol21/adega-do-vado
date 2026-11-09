@@ -14,7 +14,7 @@ export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('admin@adegadovado.com.br');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
   const [otpCode, setOtpCode] = useState('');

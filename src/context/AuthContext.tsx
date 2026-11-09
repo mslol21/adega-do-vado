@@ -84,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
         if (data.role) {
           setActiveRoleState(data.role);
         }
+      } else {
+        setProfile(null);
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -97,13 +99,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
 
     const fetchSession = async () => {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Falha ao verificar sessão:', err);
+        setSession(null);
+        setUser(null);
         setProfile(null);
         setLoading(false);
       }
@@ -131,6 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setOpEmployee(null);
+    localStorage.removeItem(`op_auth_employee_${storeId}`);
+    sessionStorage.removeItem('admin_auth');
   };
 
   return (

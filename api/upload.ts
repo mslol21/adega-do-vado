@@ -20,7 +20,7 @@ const matchesMagic = (bytes: Uint8Array, type: string) => {
   return false;
 };
 
-export default async function handler(request: Request): Promise<Response> {
+async function handler(request: Request): Promise<Response> {
   if (request.method === 'GET') {
     const ready = ['NEON_STORAGE_DATA_API_URL','NEON_STORAGE_API_TOKEN','NEON_STORAGE_PROJECT_ID','NEON_STORAGE_BRANCH_ID','NEON_STORAGE_PUBLIC_BASE']
       .every(key => !!serverEnv[key]);
@@ -104,3 +104,7 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'Não foi possível processar a imagem.' }, 500);
   }
 }
+
+// Vercel Functions v4 supports named HTTP method exports for Web Response.
+export const GET = handler;
+export const POST = handler;

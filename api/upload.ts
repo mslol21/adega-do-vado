@@ -1,4 +1,4 @@
-import process from 'node:process';
+const serverEnv = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env || {};
 
 /**
  * Authenticated Neon Object Storage uploader (Vercel Function).
@@ -25,11 +25,11 @@ export default async function handler(request: Request): Promise<Response> {
   const bearer = request.headers.get('authorization')?.match(/^Bearer ([A-Za-z0-9_.-]+)$/)?.[1];
   if (!bearer || bearer.length > 8192) return json({ error: 'Faça login como administrador.' }, 401);
 
-  const dataApi = process.env.NEON_STORAGE_DATA_API_URL;
-  const token = process.env.NEON_STORAGE_API_TOKEN;
-  const projectId = process.env.NEON_STORAGE_PROJECT_ID;
-  const branchId = process.env.NEON_STORAGE_BRANCH_ID;
-  const publicBase = process.env.NEON_STORAGE_PUBLIC_BASE;
+  const dataApi = serverEnv.NEON_STORAGE_DATA_API_URL;
+  const token = serverEnv.NEON_STORAGE_API_TOKEN;
+  const projectId = serverEnv.NEON_STORAGE_PROJECT_ID;
+  const branchId = serverEnv.NEON_STORAGE_BRANCH_ID;
+  const publicBase = serverEnv.NEON_STORAGE_PUBLIC_BASE;
   if (!dataApi || !token || !projectId || !branchId || !publicBase)
     return json({ error: 'Armazenamento não configurado no servidor.' }, 503);
 

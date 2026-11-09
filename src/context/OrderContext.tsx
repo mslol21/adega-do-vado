@@ -72,10 +72,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     revision.current++;
     setError(null);
     try {
-      const { data, error: rpcError } = await supabase.rpc('save_order_atomic', {
-        p_store_id: storeId, p_order_id: id, p_action: action, p_order: payload,
-        p_expected_updated_at: expected ?? null,
-      });
+      // Public online checkout is a strictly validated Neon RPC, not a table write.
+      // Administrative actions continue through the authenticated atomic RPC.
+      const isPublicNeonCheckout = useNeon && action === 'create' && payload.source === 'ONLINE';
+      const { data, error: rpcError } = isPublicNeonCheckout
+        ? await supabase.rpc('place_public_order', {
+            p_store_id: storeId, p_order_id: id, p_order: payload,
+          })
+        : await supabase.rpc('save_order_atomic', {
+            p_store_id: storeId, p_order_id: id, p_action: action, p_order: payload,
+            p_expected_updated_at: expected ?? null,
+          });
       if (rpcError) throw rpcError;
       const saved = data as SavedOrder | null;
       if (!saved?.order?.id || !Array.isArray(saved.order.items)) throw new Error('Resposta de gravação inválida.');

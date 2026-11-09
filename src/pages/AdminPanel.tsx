@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useData } from '../context/useData';
+import { useAuth } from '../context/useAuth';
+import { supabase, useNeon } from '../lib/supabase';
 import { useStore } from '../context/useStore';
 import type { Product, Category } from '../types';
 import {
@@ -22,6 +24,7 @@ const emptyProduct = (): Partial<Product> => ({
 
 export const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
   const { products, categories, settings, loading,
     addProduct, updateProduct, deleteProduct,
     addCategory, updateCategory, deleteCategory, updateSettings, uploadFile } = useData();
@@ -54,6 +57,7 @@ export const AdminPanel: React.FC = () => {
   const [pinsSaved, setPinsSaved] = useState(false);
 
   const savePins = (e: React.FormEvent) => {
+    if (useNeon) { e.preventDefault(); return; }
     e.preventDefault();
     Object.entries(pins).forEach(([role, pin]) => {
       localStorage.setItem(`op_pin_${role}_${storeId}`, pin.trim());
@@ -184,9 +188,12 @@ export const AdminPanel: React.FC = () => {
     { id: 'products', label: 'Produtos', icon: <ShoppingBag size={18} /> },
     { id: 'categories', label: 'Categorias', icon: <Grid size={18} /> },
     { id: 'settings', label: 'Configurações', icon: <Settings size={18} /> },
-    { id: 'passwords', label: 'Senhas de Acesso', icon: <KeyRound size={18} /> },
+    ...(!useNeon ? [{ id: 'passwords' as Tab, label: 'Senhas de Acesso', icon: <KeyRound size={18} /> }] : []),
     { id: 'qrcode', label: 'QR Code Balcão', icon: <QrCode size={18} /> },
   ];
+
+  if (useNeon && authLoading) return <div className="min-h-screen grid place-items-center bg-[#080508] text-white">Verificando credenciais...</div>;
+  if (useNeon && (!user || profile?.role !== 'ADMIN' || profile.store_id !== storeId)) return <Navigate to="/admin" replace />;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bgPrimary }}>
@@ -244,7 +251,7 @@ export const AdminPanel: React.FC = () => {
             style={{ color: `${accent}60` }}>
             <ArrowLeft size={14} /> Ver catálogo da loja
           </Link>
-          <button onClick={() => { sessionStorage.removeItem('admin_auth'); navigate('/admin'); }}
+          <button onClick={async () => { sessionStorage.removeItem('admin_auth'); if (useNeon) await supabase.auth.signOut(); navigate('/admin'); }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold w-full text-red-400 hover:text-red-300 transition-all">
             <ArrowLeft size={14} /> Trocar loja / Sair
           </button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Flame, GlassWater, ArrowRight } from 'lucide-react';
+import { supabase, useNeon } from '../lib/supabase';
 
 const STORES = [
   { id: 'tabacaria', label: 'Tabacaria do Vado', icon: <Flame size={24} />, color: '#F2BC1B', path: '/admin/tabacaria' },
@@ -13,17 +14,82 @@ export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('admin_auth', 'true');
-      const store = STORES.find(s => s.id === selectedStore);
-      navigate(store?.path || '/admin/tabacaria');
-    } else {
-      setError('Senha incorreta.');
+    if (!selectedStore || submitting) return;
+    setError('');
+    if (!useNeon) {
+      if (password === ADMIN_PASSWORD) {
+        sessionStorage.setItem('admin_auth', 'true');
+        navigate(STORES.find(s => s.id === selectedStore)?.path || '/admin/tabacaria');
+      } else setError('Senha incorreta.');
+      return;
     }
+    setSubmitting(true);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) throw signInError;
+      const userId = data.user?.id || data.session?.user?.id;
+      if (!userId) throw new Error('Sessão não confirmada.');
+      const { data: profile, error: profileError } = await supabase.from('profiles')
+        .select('role').eq('user_id', userId).eq('store_id', selectedStore).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.role !== 'ADMIN') {
+        await supabase.auth.signOut();
+        throw new Error('Esta conta não tem autorização administrativa para essa loja.');
+      }
+      sessionStorage.setItem('admin_auth', 'true');
+      navigate(STORES.find(s => s.id === selectedStore)?.path || '/admin/adega');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível autenticar. Verifique suas credenciais.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const recoverAccess = async () => {
+    if (!email.trim() || !selectedStore || submitting) { setError('Informe seu e-mail e selecione a loja.'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({ email: email.trim() });
+      if (otpError) throw otpError;
+      setOtpRequested(true);
+      setError('Enviamos um código de acesso ao e-mail informado. Confira a caixa de entrada e o spam.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao solicitar código de acesso.');
+    } finally { setSubmitting(false); }
+  };
+
+  const confirmOtp = async () => {
+    if (!selectedStore || !otpCode.trim() || submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const { data, error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim(), token: otpCode.trim(), type: 'email',
+      });
+      if (otpError) throw otpError;
+      const userId = data.user?.id || data.session?.user?.id;
+      if (!userId) throw new Error('Código não confirmou uma sessão válida.');
+      const { data: profile, error: profileError } = await supabase.from('profiles')
+        .select('role').eq('user_id', userId).eq('store_id', selectedStore).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.role !== 'ADMIN') {
+        await supabase.auth.signOut();
+        throw new Error('Conta sem autorização para esta loja.');
+      }
+      sessionStorage.setItem('admin_auth','true');
+      navigate(STORES.find(store => store.id === selectedStore)?.path || '/admin/adega');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código inválido ou expirado.');
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -58,7 +124,11 @@ export const AdminLogin: React.FC = () => {
         {/* Password form */}
         {selectedStore && (
           <form onSubmit={handleLogin} className="space-y-4 animate-fade-in">
-            <input type="password" placeholder="Senha de acesso" value={password}
+            {useNeon && <input type="email" autoComplete="username" required placeholder="E-mail do administrador" value={email}
+              onChange={e => { setEmail(e.target.value); setError(''); }}
+              className="w-full rounded-xl p-4 text-center outline-none text-sm font-medium"
+              style={{ background: '#1D2B3A', border: '1px solid #F2BC1B30', color: '#FFFFFF' }} />}
+            <input type="password" autoComplete={useNeon ? 'current-password' : 'off'} placeholder="Senha de acesso" value={password}
               onChange={e => { setPassword(e.target.value); setError(''); }} autoFocus
               className="w-full rounded-xl p-4 text-center outline-none text-sm font-medium"
               style={{ background: '#1D2B3A', border: '1px solid #F2BC1B30', color: '#FFFFFF' }} />
@@ -66,8 +136,17 @@ export const AdminLogin: React.FC = () => {
             <button type="submit"
               className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg, #F2BC1B, #FFD700)', color: '#0D151D' }}>
-              Entrar no Painel <ArrowRight size={18} />
+              {submitting ? "Verificando..." : useNeon ? "Entrar com senha" : "Entrar no Painel"} <ArrowRight size={18} />
             </button>
+            {useNeon && <>
+              <button type="button" disabled={submitting} onClick={() => void recoverAccess()} className="text-xs text-[#F2BC1B] w-full text-center underline">Primeiro acesso: enviar código por e-mail</button>
+              {otpRequested && <div className="space-y-2">
+                <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="Código recebido no e-mail" value={otpCode} onChange={event => setOtpCode(event.target.value)}
+                  className="w-full rounded-xl p-3 bg-[#1D2B3A] text-white text-center border border-[#F2BC1B50]" />
+                <button type="button" disabled={submitting || !otpCode.trim()} onClick={() => void confirmOtp()}
+                  className="w-full rounded-xl p-3 bg-[#F2BC1B] text-black font-bold">Confirmar código e acessar</button>
+              </div>}
+            </>}
           </form>
         )}
       </div>

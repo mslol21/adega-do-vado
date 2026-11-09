@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useNeon } from '../../lib/supabase';
 import { useAuth } from '../../context/useAuth';
 import { useStore } from '../../context/useStore';
 import { Lock, UserCheck, ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
@@ -8,12 +10,26 @@ interface OperacaoAuthGuardProps {
 }
 
 export const OperacaoAuthGuard: React.FC<OperacaoAuthGuardProps> = ({ children }) => {
-  const { activeRole, setActiveRole, opEmployee, loginOpEmployee } = useAuth();
+  const { activeRole, setActiveRole, opEmployee, loginOpEmployee, loading, user, profile } = useAuth();
   const store = useStore();
   const [selectedRole, setSelectedRole] = useState<string>(activeRole || 'ATENDENTE');
   const [employeeName, setEmployeeName] = useState<string>('');
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<string>('');
+
+  // Never accept legacy localStorage PINs as authorization in Neon mode.
+  // Operators require a verified administrative session until per-employee auth is implemented.
+  if (useNeon) {
+    if (loading) return <div className="min-h-screen bg-[#080508] text-white grid place-items-center">Verificando acesso...</div>;
+    if (!user || profile?.role !== 'ADMIN') return (
+      <div className="min-h-screen bg-[#080508] text-white flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <h1 className="text-xl font-bold">Acesso restrito</h1>
+        <p>Entre com a conta administrativa autorizada para esta loja.</p>
+        <Link to="/admin" className="rounded-xl bg-[#C9963C] text-black px-6 py-3 font-bold">Acessar login seguro</Link>
+      </div>
+    );
+    return <>{children}</>;
+  }
 
   // Se o funcionário já estiver autenticado na sessão do terminal, libera o acesso aos setores
   if (opEmployee?.authenticated) {

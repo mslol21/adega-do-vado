@@ -1,7 +1,7 @@
 import { DataContext } from './useData';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
-import { supabase, isOfflineMode } from '../lib/supabase';
+import { supabase, isOfflineMode, useNeon } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
 import { catalogQuery, catalogPages } from '../utils/catalogQuery';
 
@@ -295,6 +295,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const uploadFile = async (file: File) => {
+    // Neon Storage uploads require signed, authorized server endpoints.
+    // Until then, preserve upload functionality with a bounded data URL;
+    // never upload to Supabase while testing Neon.
+    if (useNeon) {
+      if (file.size > 3 * 1024 * 1024) throw new Error('A imagem precisa ter no máximo 3 MB.');
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError || !session?.access_token) throw new Error('Faça login como administrador para enviar imagens.');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('storeId', storeConfig.id);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+        cache: 'no-store',
+      });
+      const result = await response.json() as {url?: string; error?: string};
+      if (!response.ok || !result.url) throw new Error(result.error || 'Falha ao enviar a imagem ao Neon.');
+      return result.url;
+    }
     if (isOfflineMode) {
       return await fileToBase64(file);
     }

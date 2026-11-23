@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Flame, GlassWater, ArrowRight } from 'lucide-react';
-import { supabase, useNeon } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+const useNeon = true;
 
 const STORES = [
   { id: 'tabacaria', label: 'Tabacaria do Vado', icon: <Flame size={24} />, color: '#F2BC1B', path: '/admin/tabacaria' },
   { id: 'adega', label: 'Adega do Vado', icon: <GlassWater size={24} />, color: '#F2BC1B', path: '/admin/adega' },
 ];
-
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'vado2025';
 
 export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -24,13 +23,6 @@ export const AdminLogin: React.FC = () => {
     e.preventDefault();
     if (!selectedStore || submitting) return;
     setError('');
-    if (!useNeon) {
-      if (password === ADMIN_PASSWORD) {
-        sessionStorage.setItem('admin_auth', 'true');
-        navigate(STORES.find(s => s.id === selectedStore)?.path || '/admin/tabacaria');
-      } else setError('Senha incorreta.');
-      return;
-    }
     setSubmitting(true);
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });

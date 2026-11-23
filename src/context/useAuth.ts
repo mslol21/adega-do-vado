@@ -1,6 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Profile } from '../types';
-import type { Session, User } from '@supabase/supabase-js';
+import type { Profile, Session, User } from '../types';
 
 export interface OpEmployee {
   role: string;

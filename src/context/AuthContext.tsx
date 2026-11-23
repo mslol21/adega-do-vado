@@ -2,8 +2,7 @@ import { AuthContext } from './useAuth';
 import type { OpEmployee } from './useAuth';
 import React, { useEffect, useState } from 'react';
 import { supabase, isOfflineMode } from '../lib/supabase';
-import type { Profile } from '../types';
-import type { Session, User } from '@supabase/supabase-js';
+import type { Profile, Session, User } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string }> = ({ children, storeId }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -121,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
 
     fetchSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: unknown, session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
 

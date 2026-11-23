@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useNeon } from '../../lib/supabase';
+import { isOfflineMode } from '../../lib/supabase';
 import { useAuth } from '../../context/useAuth';
 import { useStore } from '../../context/useStore';
 import { Lock, UserCheck, ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
@@ -17,9 +17,8 @@ export const OperacaoAuthGuard: React.FC<OperacaoAuthGuardProps> = ({ children }
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  // Never accept legacy localStorage PINs as authorization in Neon mode.
-  // Operators require a verified administrative session until per-employee auth is implemented.
-  if (useNeon) {
+  // When online with Neon, operators require a verified administrative session.
+  if (!isOfflineMode) {
     if (loading) return <div className="min-h-screen bg-[#080508] text-white grid place-items-center">Verificando acesso...</div>;
     if (!user || profile?.role !== 'ADMIN') return (
       <div className="min-h-screen bg-[#080508] text-white flex flex-col items-center justify-center gap-4 p-6 text-center">

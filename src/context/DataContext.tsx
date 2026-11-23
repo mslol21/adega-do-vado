@@ -1,7 +1,7 @@
 import { DataContext } from './useData';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Product, Category, GlobalOption, ShopSettings } from '../types';
-import { supabase, isOfflineMode, useNeon } from '../lib/supabase';
+import { supabase, isOfflineMode } from '../lib/supabase';
 import type { StoreConfig } from '../types/store';
 import { catalogQuery, catalogPages } from '../utils/catalogQuery';
 
@@ -59,10 +59,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   const fetchData = useCallback(() => {
     if (isOfflineMode) return Promise.resolve();
     return Promise.all([
-      catalogPages((from, to, signal) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('id').range(from, to).abortSignal(signal), 25),
-      catalogQuery(signal => supabase.from('settings').select('*').eq('store_id', storeConfig.id).abortSignal(signal).maybeSingle()),
-      catalogQuery(signal => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name').abortSignal(signal)),
-      catalogQuery(signal => supabase.from('global_options').select('*').order('name').abortSignal(signal)),
+      catalogPages<any>((from, to, signal) => supabase.from('products').select('*').eq('store_id', storeConfig.id).order('id').range(from, to).abortSignal(signal), 25),
+      catalogQuery<ShopSettings>(signal => supabase.from('settings').select('*').eq('store_id', storeConfig.id).abortSignal(signal).maybeSingle()),
+      catalogQuery<Category[]>(signal => supabase.from('categories').select('*').eq('store_id', storeConfig.id).order('name').abortSignal(signal)),
+      catalogQuery<any[]>(signal => supabase.from('global_options').select('*').order('name').abortSignal(signal)),
     ]).then(([
       { data: productsData, error: productsError },
       { data: settingsData, error: settingsError },
@@ -295,46 +295,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const uploadFile = async (file: File) => {
-    // Neon Storage uploads require signed, authorized server endpoints.
-    // Until then, preserve upload functionality with a bounded data URL;
-    // never upload to Supabase while testing Neon.
-    if (useNeon) {
-      if (file.size > 3 * 1024 * 1024) throw new Error('A imagem precisa ter no máximo 3 MB.');
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
-      if (authError || !session?.access_token) throw new Error('Faça login como administrador para enviar imagens.');
-      const form = new FormData();
-      form.append('file', file);
-      form.append('storeId', storeConfig.id);
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: form,
-        cache: 'no-store',
-      });
-      const result = await response.json() as {url?: string; error?: string};
-      if (!response.ok || !result.url) throw new Error(result.error || 'Falha ao enviar a imagem ao Neon.');
-      return result.url;
-    }
     if (isOfflineMode) {
       return await fileToBase64(file);
     }
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${storeConfig.id}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-      if (uploadError) {
-        console.warn('Erro ou Bucket Supabase "products" nao encontrado. Convertendo para Base64:', uploadError);
-        return await fileToBase64(file);
-      }
-      const { data } = supabase.storage.from('products').getPublicUrl(fileName);
-      return data.publicUrl;
-    } catch (err) {
-      console.warn('Erro ao enviar imagem ao Supabase. Aplicando fallback Base64:', err);
-      return await fileToBase64(file);
-    }
+    if (file.size > 3 * 1024 * 1024) throw new Error('A imagem precisa ter no máximo 3 MB.');
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session?.access_token) throw new Error('Faça login como administrador para enviar imagens.');
+    const form = new FormData();
+    form.append('file', file);
+    form.append('storeId', storeConfig.id);
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+      cache: 'no-store',
+    });
+    const result = await response.json() as {url?: string; error?: string};
+    if (!response.ok || !result.url) throw new Error(result.error || 'Falha ao enviar a imagem ao Neon.');
+    return result.url;
   };
 
   const addCategory = async (category: Partial<Category>) => {
@@ -401,7 +379,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const updateGlobalOption = async (option: GlobalOption) => {
-    if (!import.meta.env.VITE_SUPABASE_URL) {
+    if (isOfflineMode) {
       setGlobalOptions(globalOptions.map(o => o.id === option.id ? option : o));
       return;
     }
@@ -413,7 +391,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, storeConfi
   };
 
   const deleteGlobalOption = async (id: string) => {
-    if (!import.meta.env.VITE_SUPABASE_URL) {
+    if (isOfflineMode) {
       setGlobalOptions(globalOptions.filter(o => o.id !== id));
       return;
     }

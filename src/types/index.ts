@@ -216,5 +216,22 @@ export type OrderInput = Omit<Partial<Order>, 'items'> & {
   items?: Omit<OrderItem, 'id' | 'order_id'>[];
 };
 
+export type User = {
+  id: string;
+  email?: string;
+  phone?: string;
+  created_at?: string;
+  user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
+};
+
+export type Session = {
+  access_token: string;
+  refresh_token?: string;
+  expires_in?: number;
+  token_type?: string;
+  user: User;
+};
+
 // Dummy export to ensure this is treated as a module with values if needed
 export const TYPES_VERSION = "1.1.0";

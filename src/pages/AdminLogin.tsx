@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Flame, GlassWater, ArrowRight } from 'lucide-react';
-import { supabase, useNeon } from '../lib/supabase';
+import { supabase, isOfflineMode } from '../lib/supabase';
 
 const STORES = [
   { id: 'tabacaria', label: 'Tabacaria do Vado', icon: <Flame size={24} />, color: '#F2BC1B', path: '/admin/tabacaria' },
@@ -24,7 +24,7 @@ export const AdminLogin: React.FC = () => {
     e.preventDefault();
     if (!selectedStore || submitting) return;
     setError('');
-    if (!useNeon) {
+    if (isOfflineMode) {
       if (password === ADMIN_PASSWORD) {
         sessionStorage.setItem('admin_auth', 'true');
         navigate(STORES.find(s => s.id === selectedStore)?.path || '/admin/tabacaria');
@@ -124,11 +124,11 @@ export const AdminLogin: React.FC = () => {
         {/* Password form */}
         {selectedStore && (
           <form onSubmit={handleLogin} className="space-y-4 animate-fade-in">
-            {useNeon && <input type="email" autoComplete="username" required placeholder="E-mail do administrador" value={email}
+            {!isOfflineMode && <input type="email" autoComplete="username" required placeholder="E-mail do administrador" value={email}
               onChange={e => { setEmail(e.target.value); setError(''); }}
               className="w-full rounded-xl p-4 text-center outline-none text-sm font-medium"
               style={{ background: '#1D2B3A', border: '1px solid #F2BC1B30', color: '#FFFFFF' }} />}
-            <input type="password" autoComplete={useNeon ? 'current-password' : 'off'} placeholder="Senha de acesso" value={password}
+            <input type="password" autoComplete={!isOfflineMode ? 'current-password' : 'off'} placeholder="Senha de acesso" value={password}
               onChange={e => { setPassword(e.target.value); setError(''); }} autoFocus
               className="w-full rounded-xl p-4 text-center outline-none text-sm font-medium"
               style={{ background: '#1D2B3A', border: '1px solid #F2BC1B30', color: '#FFFFFF' }} />
@@ -136,9 +136,9 @@ export const AdminLogin: React.FC = () => {
             <button type="submit"
               className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg, #F2BC1B, #FFD700)', color: '#0D151D' }}>
-              {submitting ? "Verificando..." : useNeon ? "Entrar com senha" : "Entrar no Painel"} <ArrowRight size={18} />
+              {submitting ? "Verificando..." : !isOfflineMode ? "Entrar com senha" : "Entrar no Painel"} <ArrowRight size={18} />
             </button>
-            {useNeon && <>
+            {!isOfflineMode && <>
               <button type="button" disabled={submitting} onClick={() => void recoverAccess()} className="text-xs text-[#F2BC1B] w-full text-center underline">Primeiro acesso: enviar código por e-mail</button>
               {otpRequested && <div className="space-y-2">
                 <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="Código recebido no e-mail" value={otpCode} onChange={event => setOtpCode(event.target.value)}

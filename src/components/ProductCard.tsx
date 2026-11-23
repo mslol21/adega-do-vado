@@ -87,7 +87,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
               >
                 {allImages.map((img, i) => (
                   <div key={i} className="w-full h-full flex-shrink-0 snap-center relative">
-                    <img src={img} loading="lazy" decoding="async" alt={`${product.name} - ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      loading="lazy"
+                      decoding="async"
+                      alt={`${product.name} - ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23555" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
+                      }}
+                    />
                   </div>
                 ))}
               </div>
@@ -115,6 +124,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, isProm
               decoding="async"
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23555" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
+              }}
             />
           )}
           

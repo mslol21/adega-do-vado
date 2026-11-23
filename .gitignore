@@ -19,6 +19,9 @@ dist-ssr/
 # Supabase
 .supabase/
 
+# Storage local data
+storage_recovered/
+
 # Environment variables
 .env
 .env.local

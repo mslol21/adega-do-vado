@@ -1,6 +1,6 @@
 import { OrderContext } from './useOrders';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase, isOfflineMode, useNeon } from '../lib/supabase';
+import { supabase, isOfflineMode } from '../lib/supabase';
 import type { Order, OrderItem, OrderInput, OrderStatus } from '../types';
 import { useData } from './useData';
 import { getPendingOrderId, clearPendingOrderId } from '../utils/orderAttempt';
@@ -53,15 +53,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     };
     void fetchOrders();
     const interval = window.setInterval(() => void fetchOrders(), 4000);
-    // Neon Data API does not expose the Supabase Realtime channel API.
-    // The existing 4-second polling remains active as a safe fallback.
-    const subscription = !useNeon ? supabase.channel('orders-' + storeId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: 'store_id=eq.' + storeId }, () => void fetchOrders())
-      .subscribe() : null;
     return () => {
       disposed = true;
       window.clearInterval(interval);
-      if (subscription) void supabase.removeChannel(subscription);
     };
   }, [storeId, enableSync]);
 
@@ -74,7 +68,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode; storeId: strin
     try {
       // Public online checkout is a strictly validated Neon RPC, not a table write.
       // Administrative actions continue through the authenticated atomic RPC.
-      const isPublicNeonCheckout = useNeon && action === 'create' && payload.source === 'ONLINE';
+      const isPublicNeonCheckout = action === 'create' && payload.source === 'ONLINE';
       const { data, error: rpcError } = isPublicNeonCheckout
         ? await supabase.rpc('place_public_order', {
             p_store_id: storeId, p_order_id: id, p_order: payload,

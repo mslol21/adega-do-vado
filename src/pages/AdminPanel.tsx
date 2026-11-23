@@ -47,8 +47,8 @@ export const AdminPanel: React.FC = () => {
   const [filterOutOfStock, setFilterOutOfStock] = useState(false);
 
   const [pins, setPins] = useState({
-    ADMIN: localStorage.getItem(`op_pin_ADMIN_${storeId}`) || localStorage.getItem('op_pin_ADMIN') || 'vado2025',
-    ATENDENTE: localStorage.getItem(`op_pin_ATENDENTE_${storeId}`) || localStorage.getItem('op_pin_ATENDENTE') || '1234',
+    ADMIN: localStorage.getItem(`op_pin_ADMIN_${storeId}`) || localStorage.getItem('op_pin_ADMIN') || '',
+    ATENDENTE: localStorage.getItem(`op_pin_ATENDENTE_${storeId}`) || localStorage.getItem('op_pin_ATENDENTE') || '',
     RECEBIMENTO: localStorage.getItem(`op_pin_RECEBIMENTO_${storeId}`) || localStorage.getItem('op_pin_RECEBIMENTO') || '1234',
     PREPARACAO: localStorage.getItem(`op_pin_PREPARACAO_${storeId}`) || localStorage.getItem('op_pin_PREPARACAO') || '1234',
     SEPARACAO: localStorage.getItem(`op_pin_SEPARACAO_${storeId}`) || localStorage.getItem('op_pin_SEPARACAO') || '1234',
@@ -57,8 +57,8 @@ export const AdminPanel: React.FC = () => {
   const [pinsSaved, setPinsSaved] = useState(false);
 
   const savePins = (e: React.FormEvent) => {
-    if (useNeon) { e.preventDefault(); return; }
     e.preventDefault();
+    if (useNeon) return;
     Object.entries(pins).forEach(([role, pin]) => {
       localStorage.setItem(`op_pin_${role}_${storeId}`, pin.trim());
       localStorage.setItem(`op_pin_${role}`, pin.trim());

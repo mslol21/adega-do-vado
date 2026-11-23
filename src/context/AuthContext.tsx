@@ -31,35 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; storeId: string
     localStorage.setItem(`op_sector_role_${storeId}`, role);
   };
 
-  const loginOpEmployee = (role: string, pin: string, name?: string): boolean => {
-    const cleanPin = pin.trim();
-    const customPin = localStorage.getItem(`op_pin_${role}_${storeId}`) || localStorage.getItem(`op_pin_${role}`);
-
-    let isValid: boolean;
-
-    if (customPin) {
-      isValid = cleanPin === customPin;
-    } else if (role === 'ADMIN') {
-      isValid = cleanPin === 'vado2025' || cleanPin === '2025' || cleanPin === 'admin';
-    } else {
-      isValid = cleanPin === '1234' || cleanPin.length >= 4;
-    }
-
-    if (isValid) {
-      const empData: OpEmployee = {
-        role,
-        name: name || `Operador ${role}`,
-        authenticated: true
-      };
-      setOpEmployee(empData);
-      setActiveRoleState(role);
-      localStorage.setItem(`op_auth_employee_${storeId}`, JSON.stringify(empData));
-      localStorage.setItem(`op_sector_role_${storeId}`, role);
-      return true;
-    }
-
-    return false;
-  };
+  // Legacy PINs are disabled: operational access requires an authenticated Neon profile.
+  const loginOpEmployee = (_role: string, _pin: string, _name?: string): boolean => false;
 
   const logoutOpEmployee = () => {
     setOpEmployee(null);
